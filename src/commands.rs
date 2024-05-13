@@ -1,11 +1,11 @@
+use crate::files::versions::{remove, upsert};
 use crate::packages;
+use crate::packages::Package;
+use crate::runner::run;
 use crate::shims::add_shim;
 use colored::*;
 use std::env;
 use std::error::Error;
-use crate::files::versions::{remove, upsert};
-use crate::packages::Package;
-use crate::runner::run;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
     println!("\n{}:", "System Information".bold().underline());
@@ -32,7 +32,11 @@ pub fn list_packages(name: Option<&str>) -> Result<(), Box<dyn Error>> {
             package.print();
             Ok(())
         } else {
-            Err(format!("Package '{}' was not found. Add the package first via 'add' command.", name).into())
+            Err(format!(
+                "Package '{}' was not found. Add the package first via 'add' command.",
+                name
+            )
+            .into())
         }
     } else {
         let packages = packages::Package::load_all()?;
@@ -50,7 +54,7 @@ pub fn list_packages(name: Option<&str>) -> Result<(), Box<dyn Error>> {
 pub fn add_package(name: String, version: String, set_default: bool) -> Result<(), Box<dyn Error>> {
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
-            return Err(format!("'{}' version {} already exists.", name, version).into())
+            return Err(format!("'{}' version {} already exists.", name, version).into());
         } else {
             package.versions.versions.push(version.clone());
         }
@@ -69,7 +73,11 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
     match (Package::load(&name)?, version) {
         (Some(mut package), Some(version)) => {
             if package.versions.current == version && package.versions.versions.len() > 1 {
-                Err(format!("Cannot remove the current active version '{}' of '{}'.", version, name).into())
+                Err(format!(
+                    "Cannot remove the current active version '{}' of '{}'.",
+                    version, name
+                )
+                .into())
             } else {
                 if package.versions.versions.contains(&version) {
                     package.versions.versions.retain(|v| v != version.as_str());
@@ -85,14 +93,12 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
                     Err(format!("Version '{}' of '{}' does not exists.", version, name).into())
                 }
             }
-        },
+        }
         (Some(_), None) => {
             remove(&name)?;
             Ok(())
-        },
-        (None, _) => {
-            Err(format!("Package '{}' does not exists.", name).into())
         }
+        (None, _) => Err(format!("Package '{}' does not exists.", name).into()),
     }
 }
 
@@ -104,7 +110,11 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
             println!("'{}' set to version '{}'", name, version);
             Ok(())
         } else {
-            Err(format!("Version '{}' of package '{}' not found. Add the version first via 'add' command.", version, name).into())
+            Err(format!(
+                "Version '{}' of package '{}' not found. Add the version first via 'add' command.",
+                version, name
+            )
+            .into())
         }
     } else {
         Err(format!("Package '{}' does not exists.", name).into())
@@ -120,7 +130,11 @@ pub fn run_package(name: String, subcommand: Vec<String>) -> Result<(), Box<dyn 
     }
 }
 
-fn run_pull_and_add_shim(name: &String, version: &String, package: Package) -> Result<(), Box<dyn Error>> {
+fn run_pull_and_add_shim(
+    name: &String,
+    version: &String,
+    package: Package,
+) -> Result<(), Box<dyn Error>> {
     let mut new_package = package.clone();
     new_package.versions.current = version.clone();
     if crate::runner::pull(&new_package) {

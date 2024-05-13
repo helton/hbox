@@ -13,7 +13,9 @@ pub struct Package {
 impl Package {
     pub fn new(name: &str, versions_package: VersionsPackage) -> Result<Self, Box<dyn Error>> {
         let index_packages = crate::files::index::parse()?;
-        let index_package = index_packages.packages.get(name)
+        let index_package = index_packages
+            .packages
+            .get(name)
             .map(|pkg| pkg.to_owned())
             .unwrap_or_else(|| IndexPackage::new(name));
         Ok(Self {
@@ -56,7 +58,6 @@ impl Package {
             }
         }
     }
-
 }
 
 // Private API
