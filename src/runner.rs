@@ -1,6 +1,7 @@
 use crate::packages::Package;
 use atty::Stream;
 use std::io::{self, Read, Write};
+use std::path::Path;
 use std::process::{Command, Stdio};
 
 fn run_command(command: &str, stdin_buffer: Option<Vec<u8>>) -> bool {
@@ -44,22 +45,39 @@ pub fn run(package: &Package, params: &Vec<String>) -> bool {
         io::stdin()
             .read_to_end(&mut buffer)
             .expect("Failed to read stdin");
-        buffer.len();
     }
 
-    let interactive_flag = if interactive { "-i " } else { "" };
-    let command = format!(
-        "docker run {}{} {}",
-        interactive_flag,
-        package.container_image_url(),
-        params.join(" ")
-    );
+    let mut args = vec!["run".to_string()];
+    if interactive {
+        args.push("-i".to_string());
+    }
 
+    // Handling volumes if available
+    if let Some(volumes) = &package.index.volumes {
+        for volume in volumes {
+            let source = shellexpand::full(&volume.source).unwrap();
+            if Path::new(&source.to_string()).exists() {
+                args.push("-v".to_string());
+                args.push(format!("{}:{}", &source, volume.target));
+            } else {
+                println!("Volume source '{}' not found. Skipping.", source);
+            }
+        }
+    }
+
+    args.push(format!(
+        "{}:{}",
+        package.index.image.clone(),
+        package.versions.current
+    ));
+    args.extend(params.iter().cloned());
+
+    let command = format!("docker {}", args.join(" "));
+    println!("Running {}", command);
     run_command(&command, Some(buffer))
 }
 
 pub fn pull(package: &Package) -> bool {
     let command = format!("docker pull {}", package.container_image_url());
-    // Normally, pull does not need stdin interaction
     run_command(&command, None)
 }

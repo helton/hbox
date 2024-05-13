@@ -49,12 +49,20 @@ impl Package {
     }
 
     pub fn print(&self) {
-        println!("- {}", self.name);
+        println!("- [{}]", self.name);
+        println!("  - image: {}", self.index.image);
+        if let Some(volumes) = &self.index.volumes {
+            println!("  - volumes:");
+            for volume in volumes {
+                println!("    - {}:{}", volume.source, volume.target);
+            }
+        }
+        println!("  - versions:");
         for version in &self.versions.versions {
             if version == &self.versions.current {
-                println!("  - {} ✔", version);
+                println!("    - {} ✔", version);
             } else {
-                println!("  - {}", version);
+                println!("    - {}", version);
             }
         }
     }

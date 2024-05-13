@@ -56,6 +56,7 @@ enum Commands {
     },
 
     /// Run the package
+    #[command(disable_help_flag = true)]
     Run {
         /// Name of the package to run
         name: String,
