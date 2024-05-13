@@ -2,7 +2,7 @@ use crate::files::index::Package as IndexPackage;
 use crate::files::versions::Package as VersionsPackage;
 use std::error::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Package {
     pub name: String,
     pub index: IndexPackage,
@@ -11,12 +11,16 @@ pub struct Package {
 
 // Public API
 impl Package {
-    pub fn new(name: &str, index_package: IndexPackage, versions_package: VersionsPackage) -> Self {
-        Self {
+    pub fn new(name: &str, versions_package: VersionsPackage) -> Result<Self, Box<dyn Error>> {
+        let index_packages = crate::files::index::parse()?;
+        let index_package = index_packages.packages.get(name)
+            .map(|pkg| pkg.to_owned())
+            .unwrap_or_else(|| IndexPackage::new(name));
+        Ok(Self {
             name: String::from(name),
             index: index_package,
             versions: versions_package,
-        }
+        })
     }
 
     pub fn load(name: &str) -> Result<Option<Self>, Box<dyn Error>> {

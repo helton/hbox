@@ -61,7 +61,7 @@ enum Commands {
         name: String,
 
         /// Arguments to pass to the package
-        #[arg(required = true, last = true)]
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         subcommand: Vec<String>,
     },
 }

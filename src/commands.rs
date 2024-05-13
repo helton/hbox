@@ -5,6 +5,7 @@ use std::env;
 use std::error::Error;
 use crate::files::versions::{remove, upsert};
 use crate::packages::Package;
+use crate::runner::run;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
     println!("\n{}:", "System Information".bold().underline());
@@ -58,7 +59,7 @@ pub fn add_package(name: String, version: String, set_default: bool) -> Result<(
         }
         run_pull_and_add_shim(&name, &version, package)?;
     } else {
-        let package = Package::new(&name, crate::files::index::Package::new(&name), crate::files::versions::Package::new(&version));
+        let package = Package::new(&name, crate::files::versions::Package::new(&version))?;
         run_pull_and_add_shim(&name, &version, package)?;
     }
     Ok(())
@@ -110,13 +111,20 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
     }
 }
 
-pub fn run_package(_name: String, _subcommand: Vec<String>) -> Result<(), Box<dyn Error>> {
-    Ok(())
+pub fn run_package(name: String, subcommand: Vec<String>) -> Result<(), Box<dyn Error>> {
+    if let Some(package) = Package::load(&name)? {
+        run(&package, &subcommand);
+        Ok(())
+    } else {
+        Err(format!("Package '{}' does not exists.", name).into())
+    }
 }
 
 fn run_pull_and_add_shim(name: &String, version: &String, package: Package) -> Result<(), Box<dyn Error>> {
-    if crate::runner::pull(&package) {
-        crate::files::versions::upsert(&name, package)?;
+    let mut new_package = package.clone();
+    new_package.versions.current = version.clone();
+    if crate::runner::pull(&new_package) {
+        upsert(&name, package)?;
         add_shim(&name)?;
         Ok(())
     } else {
