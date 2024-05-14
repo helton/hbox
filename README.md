@@ -1,7 +1,6 @@
 # 🅷📦 - hbox
 
-[![CI](https://img.shields.io/github/actions/workflow/status/helton/hbox/production.yml?branch=main&logo=github&label=CI)](https://github.com/helton/hbox/actions?query=event%3Apush+workflow%3A%22Deploy+%28Production%29%22)
-[![license](https://img.shields.io/github/license/helton/hbox.svg)](https://github.com/helton/hbox/blob/main/LICENSE)
+[![license](https://img.shields.io/github/license/helton/hbox-rs.svg)](https://github.com/helton/hbox/blob/main/LICENSE)
 
 hbox is a Command Line Interface (CLI) that leverages container technology to manage packages, powered by Rust 🦀.
 
