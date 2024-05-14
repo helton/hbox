@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/helton/hbox/compare/v0.1.0...v0.1.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* update action versions and codecov ([e3fad6a](https://github.com/helton/hbox/commit/e3fad6a3d0b0c11fb00ae607f8d5fcec7c0c5766))
+
 ## 0.1.0 (2024-05-14)
 
 
