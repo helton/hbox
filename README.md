@@ -60,7 +60,7 @@ export PATH="$HBOX_DIR/shims":$PATH
 
 If you installed hbox via `cargo` the `hbox` binary should already be available on your `PATH` env var when the shims are executed.
 
-### Package Registry/Index
+### Package Registry/Index via index.json
 
 The registry/index of packages in hbox is managed by the `$HBOX_DIR/index.json` file (example below).  This file is intended to keep information about usual package configuration.
 In the future this will be centralized in on its own repo/server, so you can fetch it on demand.
