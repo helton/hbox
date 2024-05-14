@@ -2,6 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/hbox?style=flat-square)](https://crates.io/crates/hbox)
 [![Crates.io](https://img.shields.io/crates/d/hbox?style=flat-square)](https://crates.io/crates/hbox)
+[![codecov](https://codecov.io/gh/helton/hbox/graph/badge.svg?token=F8INGHDIUS)](https://codecov.io/gh/helton/hbox)
 [![License](https://img.shields.io/github/license/helton/hbox.svg)](https://github.com/helton/hbox/blob/main/LICENSE)
 
 hbox is a Command Line Interface (CLI) that leverages container technology to manage packages, powered by Rust 🦀.
