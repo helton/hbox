@@ -4,6 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/d/hbox?style=flat-square)](https://crates.io/crates/hbox)
 [![codecov](https://codecov.io/gh/helton/hbox/graph/badge.svg?token=F8INGHDIUS)](https://codecov.io/gh/helton/hbox)
 [![License](https://img.shields.io/github/license/helton/hbox.svg)](https://github.com/helton/hbox/blob/main/LICENSE)
+[![Docs](https://docs.rs/hbox/badge.svg)](http://docs.rs/hbox)
 
 hbox is a Command Line Interface (CLI) that leverages container technology to manage packages, powered by Rust 🦀.
 
@@ -19,7 +20,7 @@ hbox offers the following features:
 ## Commands
 
 ```sh
-$ hbox -h
+> hbox help
 CLI tool that leverages container technology to manage packages.
 
 Usage: hbox <COMMAND>
@@ -43,7 +44,7 @@ Options:
 To install hbox via `cargo`, run the following command:
 
 ```sh
-cargo add hbox
+cargo install hbox
 ```
 
 ## Setup
@@ -57,13 +58,15 @@ export HBOX_DIR="$HOME/.hbox"
 export PATH="$HBOX_DIR/shims":$PATH
 ```
 
-### Configuration via config.json
+If you installed hbox via `cargo` the `hbox` binary should already be available on your `PATH` env var when the shims are executed.
 
-The configuration of packages in hbox is managed by the `$HBOX_DIR/config.json` file. This file, which is created automatically upon adding a package, contains information such as package aliases pointing to multiple registries and volume mounts:
+### Package Registry/Index
+
+The registry/index of packages in hbox is managed by the `$HBOX_DIR/index.json` file (example below).  This file is intended to keep information about usual package configuration.
+In the future this will be centralized in on its own repo/server, so you can fetch it on demand.
 
 ```json
 {
-  "debug": false,
   "packages": {
     "curl": {
       "image": "docker.io/curlimages/curl"
@@ -86,6 +89,9 @@ The configuration of packages in hbox is managed by the `$HBOX_DIR/config.json` 
     "terraform": {
       "image": "docker.io/hashicorp/terraform"
     },
+    "opa": {
+      "image": "docker.io/openpolicyagent/opa"
+    },
     "fga": {
       "image": "docker.io/openfga/cli"
     }
@@ -93,7 +99,18 @@ The configuration of packages in hbox is managed by the `$HBOX_DIR/config.json` 
 }
 ```
 
-You can use the `config.json` to also override the registry of any container image. By default, we pull from `docker.io`.
+For now you can use the `index.json` to also override the registry of any container image. By default, we pull from `docker.io` if no configuration is found for a given package.
+In the future is planned to split the override configuration from the common index/registry.
+
+### Configuration via config.json
+
+The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file:
+
+```json
+{
+  "debug": false
+}
+```
 
 ### Package Version Management via versions.json
 
