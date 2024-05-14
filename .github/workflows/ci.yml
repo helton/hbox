@@ -21,15 +21,13 @@ jobs:
 
       - uses: swatinem/rust-cache@v2
       - name: Build
-        run: >
-          cargo build
-            --verbose
+        run: |
+          cargo build --verbose
 
       - name: Run tests (without coverage)
         if: matrix.os != 'ubuntu-latest'
-        run: >
-          cargo test
-            --verbose
+        run: |
+          cargo test --verbose
 
       - name: Install cargo-tarpaulin (for coverage)
         uses: taiki-e/install-action@v2
@@ -39,15 +37,9 @@ jobs:
 
       - name: Run tests (with coverage)
         if: matrix.os == 'ubuntu-latest'
-        run: >
-          rustup toolchain install --profile minimal nightly &&
-          cargo tarpaulin
-            --verbose
-            --out Xml
-            --engine llvm
-            --skip-clean
-            --tests
-            --doc
+        run: |
+          rustup toolchain install --profile minimal nightly
+          cargo tarpaulin --verbose --out Xml --engine llvm --skip-clean --tests --doc
 
       - name: Upload coverage reports to Codecov
         if: matrix.os == 'ubuntu-latest'
@@ -82,8 +74,5 @@ jobs:
       - uses: swatinem/rust-cache@v2
 
       - name: Publish
-        run: >
-          cargo publish
-            --verbose
-            --no-verify
-            --token ${{ secrets.CARGO_API_TOKEN }}
+        run: |
+          cargo publish --verbose --no-verify --token ${{ secrets.CARGO_API_TOKEN }}
