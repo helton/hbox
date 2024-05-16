@@ -78,7 +78,8 @@ In the future this will be centralized in on its own repo/server, so you can fet
           "source": "~/.aws",
           "target": "/root/.aws"
         }
-      ]
+      ],
+      "current_directory": "/root/.aws"
     },
     "lambda_python": {
       "image": "public.ecr.aws/lambda/python"

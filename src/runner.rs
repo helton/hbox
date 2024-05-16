@@ -52,7 +52,6 @@ pub fn run(package: &Package, params: &Vec<String>) -> bool {
         args.push("-i".to_string());
     }
 
-    // Handling volumes if available
     if let Some(volumes) = &package.index.volumes {
         for volume in volumes {
             let source = shellexpand::full(&volume.source).unwrap();
@@ -63,6 +62,11 @@ pub fn run(package: &Package, params: &Vec<String>) -> bool {
                 println!("Volume source '{}' not found. Skipping.", source);
             }
         }
+    }
+
+    if let Some(current_directory) = &package.index.current_directory {
+        args.push("-w".to_string());
+        args.push(current_directory.clone());
     }
 
     args.push(format!(

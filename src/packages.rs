@@ -57,6 +57,9 @@ impl Package {
                 println!("    - {}:{}", volume.source, volume.target);
             }
         }
+        if let Some(current_directory) = &self.index.current_directory {
+            println!("  - current directory: {}", current_directory.clone());
+        }
         println!("  - versions:");
         for version in &self.versions.versions {
             if version == &self.versions.current {

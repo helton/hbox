@@ -13,6 +13,7 @@ pub struct Root {
 pub struct Package {
     pub image: String,
     pub volumes: Option<Vec<Volume>>,
+    pub current_directory: Option<String>,
 }
 
 impl Package {
@@ -20,6 +21,7 @@ impl Package {
         Package {
             image: format!("docker.io/{}", name),
             volumes: None,
+            current_directory: None
         }
     }
 }
