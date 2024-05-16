@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/helton/hbox/compare/v0.1.1...v0.2.0) (2024-05-16)
+
+
+### Features
+
+* add support to set current directory ([866b807](https://github.com/helton/hbox/commit/866b807f6f47a59b6472f724b63679371c38be8b))
+
 ## [0.1.1](https://github.com/helton/hbox/compare/v0.1.0...v0.1.1) (2024-05-14)
 
 
