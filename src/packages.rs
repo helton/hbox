@@ -48,24 +48,26 @@ impl Package {
         format!("{}:{}", self.index.image, self.versions.current)
     }
 
-    pub fn print(&self) {
+    pub fn print(&self, verbose: bool) {
         println!("- [{}]", self.name);
-        println!("  - image: {}", self.index.image);
-        if let Some(volumes) = &self.index.volumes {
-            println!("  - volumes:");
-            for volume in volumes {
-                println!("    - {}:{}", volume.source, volume.target);
+        if verbose {
+            println!("  - image: {}", self.index.image);
+            if let Some(volumes) = &self.index.volumes {
+                println!("  - volumes:");
+                for volume in volumes {
+                    println!("    - {}:{}", volume.source, volume.target);
+                }
             }
-        }
-        if let Some(binaries) = &self.index.binaries {
-            println!("  - binaries:");
-            for binary in binaries {
-                println!("    - {} -> {}", binary.name, binary.path);
+            if let Some(binaries) = &self.index.binaries {
+                println!("  - binaries:");
+                for binary in binaries {
+                    println!("    - {} -> {}", binary.name, binary.path);
+                }
             }
-        }
-        println!("  - only_shim_binaries: {}", &self.index.only_shim_binaries);
-        if let Some(current_directory) = &self.index.current_directory {
-            println!("  - current directory: {}", current_directory.clone());
+            println!("  - only_shim_binaries: {}", &self.index.only_shim_binaries);
+            if let Some(current_directory) = &self.index.current_directory {
+                println!("  - current directory: {}", current_directory.clone());
+            }
         }
         println!("  - versions:");
         for version in &self.versions.versions {

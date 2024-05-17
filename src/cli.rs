@@ -18,6 +18,10 @@ enum Commands {
     List {
         /// Show all versions for a given package
         name: Option<String>,
+
+        /// Show additional information, like image, volumes, binaries, etc.
+        #[arg(long, short)]
+        verbose: bool,
     },
 
     /// Add a specific version of a package
@@ -72,7 +76,7 @@ pub fn run() {
 
     let result = match &cli.command {
         Commands::Info => show_info(),
-        Commands::List { name } => list_packages(name.as_deref()),
+        Commands::List { name, verbose } => list_packages(name.as_deref(), *verbose),
         Commands::Add {
             name,
             version,

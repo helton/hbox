@@ -26,10 +26,10 @@ pub fn show_info() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn list_packages(name: Option<&str>) -> Result<(), Box<dyn Error>> {
+pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Error>> {
     if let Some(name) = name {
         if let Some(package) = packages::Package::load(name)? {
-            package.print();
+            package.print(verbose);
             Ok(())
         } else {
             Err(format!(
@@ -42,7 +42,7 @@ pub fn list_packages(name: Option<&str>) -> Result<(), Box<dyn Error>> {
         let packages = packages::Package::load_all()?;
         if !packages.is_empty() {
             for package in &packages {
-                package.print();
+                package.print(verbose);
             }
             Ok(())
         } else {
