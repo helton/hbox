@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.0](https://github.com/helton/hbox/compare/v0.3.0...v0.4.0) (2024-05-17)
+
+
+### Features
+
+* add environment variables support ([86bf605](https://github.com/helton/hbox/commit/86bf6052fb4804cad75c5c6c5b57bc07b6651ffc))
+* add verbose mode to list command ([cc330a0](https://github.com/helton/hbox/commit/cc330a0f532bda7ad5dbd59a67667425f0e0183a))
+* add way to access and shim internal binaries ([633a9c2](https://github.com/helton/hbox/commit/633a9c2b1abf3b3a891b50ac4f302553c9820193))
+
 ## [0.3.0](https://github.com/helton/hbox/compare/v0.2.0...v0.3.0) (2024-05-17)
 
 
