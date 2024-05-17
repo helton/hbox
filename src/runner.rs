@@ -69,6 +69,13 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
         args.push(current_directory.clone());
     }
 
+    if let Some(environment_variables) = &package.index.environment_variables {
+        for env_var in environment_variables {
+            args.push("-e".to_string());
+            args.push(format!("{}={}", env_var.name, env_var.value));
+        }
+    }
+
     if let Some(b) = binary {
         if let Some(binaries) = &package.index.binaries {
             for binary in binaries {

@@ -58,6 +58,12 @@ impl Package {
                     println!("    - {}:{}", volume.source, volume.target);
                 }
             }
+            if let Some(environment_variables) = &self.index.environment_variables {
+                println!("  - environment variables:");
+                for env_var in environment_variables {
+                    println!("    - {}={}", env_var.name, env_var.value);
+                }
+            }
             if let Some(binaries) = &self.index.binaries {
                 println!("  - binaries:");
                 for binary in binaries {

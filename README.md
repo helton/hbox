@@ -17,6 +17,7 @@ hbox offers the following features:
 - **Support for Pipes**: hbox supports the use of pipes in `hbox run`, which allows you to chain commands efficiently.
 - **Convenient Shims**: hbox creates `shims` (alias shortcuts) for all installed packages, simplifying command entry from `hbox run <package alias> <commands>` to `<package alias> <commands>`.
 - **Accessible Internal Binaries**: hbox has the ability to provide direct access to internal binaries within images. Users can override the default entrypoint, meaning essential tools and utilities within containers can be accessed directly. This feature further expands the capabilities of hbox `shims`, making it even more convenient to launch and utilize container tools.
+- **Customizable Environment Variables**: hbox supports setting environment variables for each package, enabling finer control over runtime configurations.
 
 ## Commands
 
@@ -84,7 +85,25 @@ In the future this will be centralized in on its own repo/server, so you can fet
           "path": "/bin/tree"
         }
       ],
-      "only_shim_binaries": true
+      "only_shim_binaries": true,
+      "environment_variables": [
+        {
+          "name": "FOO",
+          "value": "abc123"
+        },
+        {
+          "name": "HTTP_PROXY",
+          "value": "$HTTP_PROXY"
+        },
+        {
+          "name": "HTTPS_PROXY",
+          "value": "$HTTPS_PROXY"
+        },
+        {
+          "name": "NO_PROXY",
+          "value": "$NO_PROXY"
+        }
+      ]
     },
     "golang": {
       "image": "docker.io/golang",
