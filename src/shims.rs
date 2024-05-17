@@ -1,7 +1,7 @@
+use crate::files::variables::AppConfig;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
-use crate::files::variables::AppConfig;
 
 pub fn add_shim(name: &str, binary: Option<&str>) -> std::io::Result<()> {
     let config = AppConfig::new();
@@ -14,7 +14,7 @@ pub fn add_shim(name: &str, binary: Option<&str>) -> std::io::Result<()> {
 
         let command = match binary {
             Some(bin) => format!("{}::{}", name, bin),
-            None => name.to_string()
+            None => name.to_string(),
         };
 
         if std::env::consts::OS == "windows" {

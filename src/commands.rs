@@ -4,9 +4,9 @@ use crate::packages::Package;
 use crate::runner::run;
 use crate::shims::{add_shim, remove_shim};
 use colored::*;
+use log::info;
 use std::env;
 use std::error::Error;
-use log::info;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
     info!("\n{}:", "System Information".bold().underline());
@@ -64,11 +64,17 @@ pub fn add_package(name: String, version: String, set_default: bool) -> Result<(
         }
         let current = package.versions.current.clone();
         do_add_package(&name, &version, package)?;
-        info!("Added '{}' version '{}'. Current version is '{}'.", name, version, current);
+        info!(
+            "Added '{}' version '{}'. Current version is '{}'.",
+            name, version, current
+        );
     } else {
         let package = Package::new(&name, crate::files::versions::Package::new(&version))?;
         do_add_package(&name, &version, package)?;
-        info!("Added '{}' version '{}'. Current version is '{}'.", name, version, version);
+        info!(
+            "Added '{}' version '{}'. Current version is '{}'.",
+            name, version, version
+        );
     }
     Ok(())
 }

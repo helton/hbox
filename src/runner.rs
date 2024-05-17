@@ -1,9 +1,9 @@
 use crate::packages::Package;
 use atty::Stream;
+use log::{debug, error};
 use std::io::{self, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
-use log::{debug, error};
 
 fn run_command(command: &str, stdin_buffer: Option<Vec<u8>>) -> bool {
     debug!("Running command: {}", command);

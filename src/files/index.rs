@@ -1,8 +1,8 @@
+use crate::files::variables::AppConfig;
 use crate::serialization::parse_json;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
-use crate::files::variables::AppConfig;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Root {
@@ -28,7 +28,7 @@ impl Package {
             current_directory: None,
             environment_variables: None,
             binaries: None,
-            only_shim_binaries: false
+            only_shim_binaries: false,
         }
     }
 }

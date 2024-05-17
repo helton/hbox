@@ -1,7 +1,7 @@
 use crate::files::index::Package as IndexPackage;
 use crate::files::versions::Package as VersionsPackage;
-use std::error::Error;
 use log::info;
+use std::error::Error;
 
 #[derive(Debug, Clone)]
 pub struct Package {

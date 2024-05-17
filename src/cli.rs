@@ -1,8 +1,8 @@
 use crate::commands::*;
-use clap::{Parser, Subcommand};
-use std::process;
-use log::error;
 use crate::logging::setup_logger;
+use clap::{Parser, Subcommand};
+use log::error;
+use std::process;
 
 #[derive(Parser)]
 #[command(version, author, about, long_about = None, arg_required_else_help = true)]

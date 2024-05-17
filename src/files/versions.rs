@@ -1,8 +1,8 @@
+use crate::files::variables::AppConfig;
 use crate::serialization::{parse_json, save_json};
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use log::info;
-use crate::files::variables::AppConfig;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Root {
