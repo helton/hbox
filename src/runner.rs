@@ -47,7 +47,7 @@ pub fn run(package: &Package, params: &Vec<String>) -> bool {
             .expect("Failed to read stdin");
     }
 
-    let mut args = vec!["run".to_string()];
+    let mut args = vec!["run".to_string(), "--rm".to_string()];
     if interactive {
         args.push("-i".to_string());
     }
