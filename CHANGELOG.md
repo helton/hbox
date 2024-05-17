@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/helton/hbox/compare/v0.2.0...v0.3.0) (2024-05-17)
+
+
+### Features
+
+* add --rm flag for every docker run ([4964841](https://github.com/helton/hbox/commit/4964841f54a8e57c92fea921cad39d35197116cc))
+
 ## [0.2.0](https://github.com/helton/hbox/compare/v0.1.1...v0.2.0) (2024-05-16)
 
 
