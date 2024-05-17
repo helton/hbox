@@ -6,23 +6,24 @@ use crate::shims::{add_shim, remove_shim};
 use colored::*;
 use std::env;
 use std::error::Error;
+use log::info;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
-    println!("\n{}:", "System Information".bold().underline());
-    println!("{}:", "OS Details".bold());
-    println!("  Name          : {}", env::consts::OS.bright_blue());
-    println!("  Architecture  : {}", env::consts::ARCH.bright_blue());
-    println!("  Family        : {}", env::consts::FAMILY.bright_blue());
-    println!("\n{}:", "Application Configuration".bold().underline());
-    println!("Version         : {}", env!("CARGO_PKG_VERSION").green());
-    println!("Environment Vars :");
-    println!(
+    info!("\n{}:", "System Information".bold().underline());
+    info!("{}:", "OS Details".bold());
+    info!("  Name          : {}", env::consts::OS.bright_blue());
+    info!("  Architecture  : {}", env::consts::ARCH.bright_blue());
+    info!("  Family        : {}", env::consts::FAMILY.bright_blue());
+    info!("\n{}:", "Application Configuration".bold().underline());
+    info!("Version         : {}", env!("CARGO_PKG_VERSION").green());
+    info!("Environment Vars :");
+    info!(
         "  HBOX_DIR       : {}",
         env::var("HBOX_DIR")
             .unwrap_or_else(|_| String::from("~/.hbox"))
             .bright_yellow()
     );
-    println!("\n");
+    info!("\n");
     Ok(())
 }
 
@@ -63,11 +64,11 @@ pub fn add_package(name: String, version: String, set_default: bool) -> Result<(
         }
         let current = package.versions.current.clone();
         do_add_package(&name, &version, package)?;
-        println!("Added '{}' version '{}'. Current version is '{}'.", name, version, current);
+        info!("Added '{}' version '{}'. Current version is '{}'.", name, version, current);
     } else {
         let package = Package::new(&name, crate::files::versions::Package::new(&version))?;
         do_add_package(&name, &version, package)?;
-        println!("Added '{}' version '{}'. Current version is '{}'.", name, version, version);
+        info!("Added '{}' version '{}'. Current version is '{}'.", name, version, version);
     }
     Ok(())
 }
@@ -86,10 +87,10 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
                     package.versions.versions.retain(|v| v != version.as_str());
                     if package.versions.versions.is_empty() {
                         do_remove_package(package)?;
-                        println!("Removed package '{}'.", name);
+                        info!("Removed package '{}'.", name);
                     } else {
                         upsert(&name, package)?;
-                        println!("Removed version '{}' of '{}'.", version, name);
+                        info!("Removed version '{}' of '{}'.", version, name);
                     }
                     Ok(())
                 } else {
@@ -99,7 +100,7 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
         }
         (Some(package), None) => {
             do_remove_package(package)?;
-            println!("Removed package '{}'.", name);
+            info!("Removed package '{}'.", name);
             Ok(())
         }
         (None, _) => Err(format!("Package '{}' does not exists.", name).into()),
@@ -111,7 +112,7 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
         if package.versions.versions.contains(&version) {
             package.versions.current = version.clone();
             upsert(&name, package)?;
-            println!("'{}' set to version '{}'", name, version);
+            info!("'{}' set to version '{}'", name, version);
             Ok(())
         } else {
             Err(format!(

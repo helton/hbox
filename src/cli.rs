@@ -1,6 +1,8 @@
 use crate::commands::*;
 use clap::{Parser, Subcommand};
 use std::process;
+use log::error;
+use crate::logging::setup_logger;
 
 #[derive(Parser)]
 #[command(version, author, about, long_about = None, arg_required_else_help = true)]
@@ -72,6 +74,11 @@ enum Commands {
 }
 
 pub fn run() {
+    if let Err(e) = setup_logger() {
+        eprintln!("Could not setup logger {}", e);
+        process::exit(1);
+    }
+
     let cli = Cli::parse();
 
     let result = match &cli.command {
@@ -88,7 +95,7 @@ pub fn run() {
     };
 
     if let Err(e) = result {
-        eprintln!("{}", e);
+        error!("{}", e);
         process::exit(1);
     }
 }

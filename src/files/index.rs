@@ -1,8 +1,8 @@
 use crate::serialization::parse_json;
-use crate::variables::AppConfig;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
+use crate::files::variables::AppConfig;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Root {

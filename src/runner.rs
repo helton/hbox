@@ -3,9 +3,10 @@ use atty::Stream;
 use std::io::{self, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
+use log::{debug, error};
 
 fn run_command(command: &str, stdin_buffer: Option<Vec<u8>>) -> bool {
-    println!("Running command: {}", command);
+    debug!("Running command: {}", command);
 
     let mut parts = command.split_whitespace();
     let cmd = parts.next().unwrap(); // Extract command
@@ -31,7 +32,7 @@ fn run_command(command: &str, stdin_buffer: Option<Vec<u8>>) -> bool {
     match child.wait() {
         Ok(status) => status.success(),
         Err(e) => {
-            println!("Command failed to complete: {}", e);
+            error!("Command failed to complete: {}", e);
             false
         }
     }
@@ -59,7 +60,7 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
                 args.push("-v".to_string());
                 args.push(format!("{}:{}", &source, volume.target));
             } else {
-                println!("Volume source '{}' not found. Skipping.", source);
+                debug!("Volume source '{}' not found. Skipping.", source);
             }
         }
     }
@@ -95,7 +96,6 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
     args.extend(params.iter().cloned());
 
     let command = format!("docker {}", args.join(" "));
-    println!("Running {}", command);
     run_command(&command, Some(buffer))
 }
 

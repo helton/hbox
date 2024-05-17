@@ -1,7 +1,7 @@
-use crate::variables::AppConfig;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
+use crate::files::variables::AppConfig;
 
 pub fn add_shim(name: &str, binary: Option<&str>) -> std::io::Result<()> {
     let config = AppConfig::new();

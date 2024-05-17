@@ -1,7 +1,8 @@
 use crate::serialization::{parse_json, save_json};
-use crate::variables::AppConfig;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use log::info;
+use crate::files::variables::AppConfig;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Root {
@@ -29,7 +30,7 @@ pub fn parse() -> Result<Root, Box<dyn Error>> {
 }
 
 pub fn upsert(name: &str, package: crate::packages::Package) -> Result<(), Box<dyn Error>> {
-    println!("Adding/Updating package '{}'", name);
+    info!("Adding/Updating package '{}'", name);
     let config = AppConfig::new();
     let mut root = parse()?;
     root.packages.insert(String::from(name), package.versions);
@@ -38,7 +39,7 @@ pub fn upsert(name: &str, package: crate::packages::Package) -> Result<(), Box<d
 }
 
 pub fn remove(name: &str) -> Result<(), Box<dyn Error>> {
-    println!("Removing package: '{}'", name);
+    info!("Removing package: '{}'", name);
     let config = AppConfig::new();
     let mut root = parse()?;
     root.packages.remove(name);

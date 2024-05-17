@@ -1,6 +1,7 @@
 use crate::files::index::Package as IndexPackage;
 use crate::files::versions::Package as VersionsPackage;
 use std::error::Error;
+use log::info;
 
 #[derive(Debug, Clone)]
 pub struct Package {
@@ -49,38 +50,38 @@ impl Package {
     }
 
     pub fn print(&self, verbose: bool) {
-        println!("- [{}]", self.name);
+        info!("- [{}]", self.name);
         if verbose {
-            println!("  - image: {}", self.index.image);
+            info!("  - image: {}", self.index.image);
             if let Some(volumes) = &self.index.volumes {
-                println!("  - volumes:");
+                info!("  - volumes:");
                 for volume in volumes {
-                    println!("    - {}:{}", volume.source, volume.target);
+                    info!("    - {}:{}", volume.source, volume.target);
                 }
             }
             if let Some(environment_variables) = &self.index.environment_variables {
-                println!("  - environment variables:");
+                info!("  - environment variables:");
                 for env_var in environment_variables {
-                    println!("    - {}={}", env_var.name, env_var.value);
+                    info!("    - {}={}", env_var.name, env_var.value);
                 }
             }
             if let Some(binaries) = &self.index.binaries {
-                println!("  - binaries:");
+                info!("  - binaries:");
                 for binary in binaries {
-                    println!("    - {} -> {}", binary.name, binary.path);
+                    info!("    - {} -> {}", binary.name, binary.path);
                 }
             }
-            println!("  - only_shim_binaries: {}", &self.index.only_shim_binaries);
+            info!("  - only_shim_binaries: {}", &self.index.only_shim_binaries);
             if let Some(current_directory) = &self.index.current_directory {
-                println!("  - current directory: {}", current_directory.clone());
+                info!("  - current directory: {}", current_directory.clone());
             }
         }
-        println!("  - versions:");
+        info!("  - versions:");
         for version in &self.versions.versions {
             if version == &self.versions.current {
-                println!("    - {} ✔", version);
+                info!("    - {} ✔", version);
             } else {
-                println!("    - {}", version);
+                info!("    - {}", version);
             }
         }
     }
