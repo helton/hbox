@@ -14,6 +14,9 @@ pub struct Package {
     pub image: String,
     pub volumes: Option<Vec<Volume>>,
     pub current_directory: Option<String>,
+    pub binaries: Option<Vec<Binary>>,
+    #[serde(default)]
+    pub only_shim_binaries: bool,
 }
 
 impl Package {
@@ -21,7 +24,9 @@ impl Package {
         Package {
             image: format!("docker.io/{}", name),
             volumes: None,
-            current_directory: None
+            current_directory: None,
+            binaries: None,
+            only_shim_binaries: false
         }
     }
 }
@@ -30,6 +35,12 @@ impl Package {
 pub struct Volume {
     pub source: String,
     pub target: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Binary {
+    pub name: String,
+    pub path: String,
 }
 
 pub fn parse() -> Result<Root, Box<dyn Error>> {

@@ -37,7 +37,7 @@ fn run_command(command: &str, stdin_buffer: Option<Vec<u8>>) -> bool {
     }
 }
 
-pub fn run(package: &Package, params: &Vec<String>) -> bool {
+pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> bool {
     let interactive = !atty::is(Stream::Stdin);
 
     let mut buffer = Vec::new();
@@ -67,6 +67,17 @@ pub fn run(package: &Package, params: &Vec<String>) -> bool {
     if let Some(current_directory) = &package.index.current_directory {
         args.push("-w".to_string());
         args.push(current_directory.clone());
+    }
+
+    if let Some(b) = binary {
+        if let Some(binaries) = &package.index.binaries {
+            for binary in binaries {
+                if binary.name == b {
+                    args.push("--entrypoint".to_string());
+                    args.push(binary.path.to_string());
+                }
+            }
+        }
     }
 
     args.push(format!(

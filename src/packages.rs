@@ -57,6 +57,13 @@ impl Package {
                 println!("    - {}:{}", volume.source, volume.target);
             }
         }
+        if let Some(binaries) = &self.index.binaries {
+            println!("  - binaries:");
+            for binary in binaries {
+                println!("    - {} -> {}", binary.name, binary.path);
+            }
+        }
+        println!("  - only_shim_binaries: {}", &self.index.only_shim_binaries);
         if let Some(current_directory) = &self.index.current_directory {
             println!("  - current directory: {}", current_directory.clone());
         }

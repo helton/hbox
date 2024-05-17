@@ -85,7 +85,7 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
                 if package.versions.versions.contains(&version) {
                     package.versions.versions.retain(|v| v != version.as_str());
                     if package.versions.versions.is_empty() {
-                        do_remove_package(&name)?;
+                        do_remove_package(package)?;
                         println!("Removed package '{}'.", name);
                     } else {
                         upsert(&name, package)?;
@@ -97,8 +97,8 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
                 }
             }
         }
-        (Some(_), None) => {
-            do_remove_package(&name)?;
+        (Some(package), None) => {
+            do_remove_package(package)?;
             println!("Removed package '{}'.", name);
             Ok(())
         }
@@ -126,8 +126,15 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
 }
 
 pub fn run_package(name: String, subcommand: Vec<String>) -> Result<(), Box<dyn Error>> {
-    if let Some(package) = Package::load(&name)? {
-        run(&package, &subcommand);
+    let parts: Vec<&str> = name.split("::").collect();
+    let (package_name, binary) = match parts.as_slice() {
+        [package_name] => (package_name.to_string(), None),
+        [package_name, binary] => (package_name.to_string(), Some(binary.to_string())),
+        _ => return Err(format!("Invalid package name '{}'.", name).into()),
+    };
+
+    if let Some(package) = Package::load(&package_name)? {
+        run(&package, binary, &subcommand);
         Ok(())
     } else {
         Err(format!("Package '{}' does not exists.", name).into())
@@ -138,16 +145,30 @@ fn do_add_package(name: &String, version: &String, package: Package) -> Result<(
     let mut new_package = package.clone();
     new_package.versions.current = version.clone();
     if crate::runner::pull(&new_package) {
+        if !&package.index.only_shim_binaries {
+            add_shim(&name, None)?;
+        }
+        if let Some(binaries) = &package.index.binaries {
+            for binary in binaries {
+                add_shim(&name, Some(&binary.name))?;
+            }
+        }
         upsert(&name, package)?;
-        add_shim(&name)?;
         Ok(())
     } else {
         Err(format!("Failed to add package '{}' at version '{}'.", name, version).into())
     }
 }
 
-fn do_remove_package(name: &String) -> Result<(), Box<dyn Error>> {
-    remove(&name)?;
-    remove_shim(&name)?;
+fn do_remove_package(package: Package) -> Result<(), Box<dyn Error>> {
+    remove(&package.name)?;
+    if !&package.index.only_shim_binaries {
+        remove_shim(&package.name)?;
+    }
+    if let Some(binaries) = &package.index.binaries {
+        for binary in binaries {
+            remove_shim(&binary.name)?;
+        }
+    }
     Ok(())
 }

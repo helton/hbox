@@ -16,6 +16,7 @@ hbox offers the following features:
 - **Robust Configuration Options**: hbox enables high customization through configuration files. You can define package aliases and setup automatic volume mounts via `config.json`.
 - **Support for Pipes**: hbox supports the use of pipes in `hbox run`, which allows you to chain commands efficiently.
 - **Convenient Shims**: hbox creates `shims` (alias shortcuts) for all installed packages, simplifying command entry from `hbox run <package alias> <commands>` to `<package alias> <commands>`.
+- **Accessible Internal Binaries**: hbox has the ability to provide direct access to internal binaries within images. Users can override the default entrypoint, meaning essential tools and utilities within containers can be accessed directly. This feature further expands the capabilities of hbox `shims`, making it even more convenient to launch and utilize container tools.
 
 ## Commands
 
@@ -68,6 +69,44 @@ In the future this will be centralized in on its own repo/server, so you can fet
 ```json
 {
   "packages": {
+    "busybox": {
+      "image": "docker.io/busybox",
+      "volumes": [
+        {
+          "source": ".",
+          "target": "/app"
+        }
+      ],
+      "current_directory": "/app",
+      "binaries": [
+        {
+          "name": "tree",
+          "path": "/bin/tree"
+        }
+      ],
+      "only_shim_binaries": true
+    },
+    "golang": {
+      "image": "docker.io/golang",
+      "volumes": [
+        {
+          "source": ".",
+          "target": "/app"
+        }
+      ],
+      "current_directory": "/app",
+      "binaries": [
+        {
+          "name": "go",
+          "path": "/usr/local/go/bin/go"
+        },
+        {
+          "name": "gofmt",
+          "path": "/usr/local/go/bin/gofmt"
+        }
+      ],
+      "only_shim_binaries": true
+    },
     "curl": {
       "image": "docker.io/curlimages/curl"
     },
