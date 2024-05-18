@@ -22,6 +22,7 @@ List of ideas I want to implement in the future.
    - Try to update config files from `.json` to `.yaml` or `.toml`
    - Make sure we create all folders and files it they don't exist
    - Write debug output into log files
+   - Check if there are unnecessary Ok() wrappers
 - New commands
   - Add auto update `hbox upgrade`
   - Add `hbox update` to update index

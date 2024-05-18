@@ -6,6 +6,7 @@ use log::{Level, LevelFilter, Log, Metadata, Record};
 use std::error::Error;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
+use std::path::MAIN_SEPARATOR;
 use std::sync::{Arc, Mutex};
 
 pub fn setup_logger() -> Result<(), Box<dyn Error>> {
@@ -60,16 +61,20 @@ impl Log for Logger {
         let timestamp = now.format("%Y-%m-%d %H:%M:%S%.3f");
 
         let file_info = match (record.file(), record.line()) {
-            (Some(file), Some(line)) => format!("{}:{}", file, line),
+            (Some(file), Some(line)) => format!("{}:{}", strip_src_prefix(file).to_string(), line),
             _ => String::from("unknown"),
         };
 
+        // Define fixed widths
         let log_line = format!(
-            "[{} {} {}] - {}",
+            "[{:<width$} {:<level_width$} {:<file_info_width$}] {}",
             timestamp,
             record.level(),
             file_info,
-            record.args()
+            record.args(),
+            width = 23,
+            level_width = 5,
+            file_info_width = 23
         );
 
         if self.enabled {
@@ -84,7 +89,7 @@ impl Log for Logger {
             Level::Error => {
                 eprintln!("{}", record.args());
             }
-            _ => ()
+            _ => (),
         }
     }
 
@@ -92,4 +97,9 @@ impl Log for Logger {
         let mut file = self.file.lock().unwrap();
         file.flush().unwrap();
     }
+}
+
+fn strip_src_prefix(file_path: &str) -> &str {
+    let prefix = format!("src{}", MAIN_SEPARATOR);
+    file_path.strip_prefix(&prefix).unwrap_or(file_path)
 }
