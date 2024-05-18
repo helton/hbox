@@ -1,4 +1,5 @@
-use crate::files::config::get_config;
+use crate::files::config::Strategy::{Append, Truncate};
+use crate::files::config::{get_config, Logs};
 use crate::files::variables::AppConfig;
 use chrono::Local;
 use log::{Level, LevelFilter, Log, Metadata, Record};
@@ -8,20 +9,7 @@ use std::io::Write;
 use std::sync::{Arc, Mutex};
 
 pub fn setup_logger() -> Result<(), Box<dyn Error>> {
-    let (log_level, log_strategy) = if let Ok(config) = get_config() {
-        (
-            match config.logs.level.to_lowercase().as_str() {
-                "info" => LevelFilter::Info,
-                "warn" => LevelFilter::Warn,
-                "debug" => LevelFilter::Debug,
-                "trace" => LevelFilter::Trace,
-                _ => LevelFilter::Error,
-            },
-            config.logs.strategy,
-        )
-    } else {
-        (LevelFilter::Info, "truncate".to_string())
-    };
+    let logs_config = get_config().map_or_else(|_| Logs::new(), |config| config.logs);
 
     let config = AppConfig::new();
     let log_file_path = config.logs_path();
@@ -35,8 +23,8 @@ pub fn setup_logger() -> Result<(), Box<dyn Error>> {
     let file = OpenOptions::new()
         .create(true)
         .write(true)
-        .truncate(log_strategy == "truncate")
-        .append(log_strategy == "append")
+        .truncate(logs_config.strategy == Truncate)
+        .append(logs_config.strategy == Append)
         .open(log_file_path)?;
 
     let file = Arc::new(Mutex::new(file));
@@ -44,9 +32,10 @@ pub fn setup_logger() -> Result<(), Box<dyn Error>> {
     // Set the logger
     log::set_boxed_logger(Box::new(Logger {
         file: file.clone(),
-        level: log_level,
+        level: logs_config.level.to_level_filter(),
+        enabled: logs_config.enabled,
     }))?;
-    log::set_max_level(log_level);
+    log::set_max_level(logs_config.level.to_level_filter());
 
     Ok(())
 }
@@ -54,6 +43,7 @@ pub fn setup_logger() -> Result<(), Box<dyn Error>> {
 struct Logger {
     file: Arc<Mutex<File>>,
     level: LevelFilter,
+    enabled: bool,
 }
 
 impl Log for Logger {
@@ -82,29 +72,19 @@ impl Log for Logger {
             record.args()
         );
 
-        if self.level <= LevelFilter::Debug
-            && (record.level() == Level::Info
-                || record.level() == Level::Warn
-                || record.level() == Level::Error)
-        {
+        if self.enabled {
             let mut file = self.file.lock().unwrap();
             writeln!(file, "{}", log_line).unwrap();
         }
 
         match record.level() {
-            Level::Trace | Level::Debug => {
-                let mut file = self.file.lock().unwrap();
-                writeln!(file, "{}", log_line).unwrap();
-            }
-            Level::Info => {
-                println!("{}", record.args());
-            }
-            Level::Warn => {
+            Level::Info | Level::Warn => {
                 println!("{}", record.args());
             }
             Level::Error => {
                 eprintln!("{}", record.args());
             }
+            _ => ()
         }
     }
 
