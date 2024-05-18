@@ -1,70 +1,8 @@
+use crate::packages::Package;
 use log::{debug, error, info, warn};
-use std::io::{stdin, IsTerminal, Read, Write, BufRead, BufReader};
+use std::io::{stdin, BufRead, BufReader, IsTerminal, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
-use crate::packages::Package;
-
-fn run_command(command: &str, stdin_buffer: Option<Vec<u8>>) -> bool {
-    debug!("Running command: {}", command);
-
-    let mut parts = command.split_whitespace();
-    let cmd = parts.next().unwrap(); // Extract command
-    let args = parts.collect::<Vec<_>>(); // Extract arguments
-
-    let mut child = Command::new(cmd)
-        .args(args)
-        .stdout(Stdio::piped()) // Redirect stdout to a pipe
-        .stderr(Stdio::piped()) // Redirect stderr to a pipe
-        .stdin(Stdio::piped()) // Set stdin to piped to write the buffer later
-        .spawn() // Spawn the command
-        .expect("Failed to spawn command");
-
-    // If stdin_buffer is Some, write it to the child's stdin
-    if let Some(buffer) = stdin_buffer {
-        let child_stdin = child.stdin.as_mut().expect("Failed to open stdin");
-        child_stdin
-            .write_all(&buffer)
-            .expect("Failed to write to stdin");
-    }
-
-    // Function to log output from a pipe
-    fn log_output<R: BufRead>(reader: R, log_fn: impl Fn(&str)) {
-        for line in reader.lines() {
-            match line {
-                Ok(line) => log_fn(&line),
-                Err(e) => error!("Failed to read line from output: {}", e),
-            }
-        }
-    }
-
-    // Read the child's stdout and stderr in separate threads and log them
-    let stdout = child.stdout.take().expect("Failed to open stdout");
-    let stderr = child.stderr.take().expect("Failed to open stderr");
-
-    let stdout_thread = std::thread::spawn(move || {
-        log_output(BufReader::new(stdout), |line| info!("{}", line));
-    });
-
-    let stderr_thread = std::thread::spawn(move || {
-        log_output(BufReader::new(stderr), |line| error!("{}", line));
-    });
-
-    // Wait for the command to complete
-    let status = child.wait();
-
-    // Wait for the logging threads to finish
-    let _ = stdout_thread.join();
-    let _ = stderr_thread.join();
-
-    // Check the command status
-    match status {
-        Ok(status) => status.success(),
-        Err(e) => {
-            error!("Command failed to complete: {}", e);
-            false
-        }
-    }
-}
 
 pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> bool {
     let interactive = !stdin().is_terminal();
@@ -81,6 +19,22 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
         args.push("-i".to_string());
     }
 
+    add_volumes(&package, &mut args);
+    add_current_directory(&package, &mut args);
+    add_environment_variables(&package, &mut args);
+    add_binary_entrypoint(&package, &binary, &mut args);
+
+    args.push(format!(
+        "{}:{}",
+        package.index.image.clone(),
+        package.versions.current
+    ));
+    args.extend(params.iter().cloned());
+
+    run_command_with_args("docker", &args, Some(buffer))
+}
+
+fn add_volumes(package: &Package, args: &mut Vec<String>) {
     if let Some(volumes) = &package.index.volumes {
         for volume in volumes {
             let source = shellexpand::full(&volume.source).unwrap();
@@ -92,39 +46,35 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
             }
         }
     }
+}
 
+fn add_current_directory(package: &Package, args: &mut Vec<String>) {
     if let Some(current_directory) = &package.index.current_directory {
         args.push("-w".to_string());
         args.push(current_directory.clone());
     }
+}
 
+fn add_environment_variables(package: &Package, args: &mut Vec<String>) {
     if let Some(environment_variables) = &package.index.environment_variables {
         for env_var in environment_variables {
             args.push("-e".to_string());
             args.push(format!("{}={}", env_var.name, env_var.value));
         }
     }
+}
 
+fn add_binary_entrypoint(package: &Package, binary: &Option<String>, args: &mut Vec<String>) {
     if let Some(b) = binary {
         if let Some(binaries) = &package.index.binaries {
             for binary in binaries {
-                if binary.name == b {
+                if binary.name == *b {
                     args.push("--entrypoint".to_string());
                     args.push(binary.path.to_string());
                 }
             }
         }
     }
-
-    args.push(format!(
-        "{}:{}",
-        package.index.image.clone(),
-        package.versions.current
-    ));
-    args.extend(params.iter().cloned());
-
-    let command = "docker";
-    run_command_with_args(command, &args, Some(buffer))
 }
 
 fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Vec<u8>>) -> bool {
@@ -132,13 +82,12 @@ fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Ve
 
     let mut child = Command::new(command)
         .args(args)
-        .stdout(Stdio::piped()) // Redirect stdout to a pipe
-        .stderr(Stdio::piped()) // Redirect stderr to a pipe
-        .stdin(Stdio::piped()) // Set stdin to piped to write the buffer later
-        .spawn() // Spawn the command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::piped())
+        .spawn()
         .expect("Failed to spawn command");
 
-    // If stdin_buffer is Some, write it to the child's stdin
     if let Some(buffer) = stdin_buffer {
         let child_stdin = child.stdin.as_mut().expect("Failed to open stdin");
         child_stdin
@@ -146,36 +95,19 @@ fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Ve
             .expect("Failed to write to stdin");
     }
 
-    // Function to log output from a pipe
-    fn log_output<R: BufRead>(reader: R, log_fn: impl Fn(&str)) {
-        for line in reader.lines() {
-            match line {
-                Ok(line) => log_fn(&line),
-                Err(e) => error!("Failed to read line from output: {}", e),
-            }
-        }
-    }
+    let stdout_thread = spawn_log_thread(
+        BufReader::new(child.stdout.take().expect("Failed to open stdout")),
+        |line| info!("{}", line),
+    );
+    let stderr_thread = spawn_log_thread(
+        BufReader::new(child.stderr.take().expect("Failed to open stderr")),
+        |line| error!("{}", line),
+    );
 
-    // Read the child's stdout and stderr in separate threads and log them
-    let stdout = child.stdout.take().expect("Failed to open stdout");
-    let stderr = child.stderr.take().expect("Failed to open stderr");
-
-    let stdout_thread = std::thread::spawn(move || {
-        log_output(BufReader::new(stdout), |line| info!("{}", line));
-    });
-
-    let stderr_thread = std::thread::spawn(move || {
-        log_output(BufReader::new(stderr), |line| error!("{}", line));
-    });
-
-    // Wait for the command to complete
     let status = child.wait();
-
-    // Wait for the logging threads to finish
     let _ = stdout_thread.join();
     let _ = stderr_thread.join();
 
-    // Check the command status
     match status {
         Ok(status) => status.success(),
         Err(e) => {
@@ -185,7 +117,21 @@ fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Ve
     }
 }
 
+fn spawn_log_thread<R: BufRead + Send + 'static>(
+    reader: R,
+    log_fn: impl Fn(&str) + Send + 'static,
+) -> std::thread::JoinHandle<()> {
+    std::thread::spawn(move || {
+        for line in reader.lines() {
+            match line {
+                Ok(line) => log_fn(&line),
+                Err(e) => error!("Failed to read line from output: {}", e),
+            }
+        }
+    })
+}
+
 pub fn pull(package: &Package) -> bool {
     let command = format!("docker pull {}", package.container_image_url());
-    run_command(&command, None)
+    run_command_with_args("docker", &[command], None)
 }
