@@ -1,5 +1,4 @@
 use crate::files::versions::{remove, upsert};
-use crate::packages;
 use crate::packages::Package;
 use crate::runner::run;
 use crate::shims::{add_shim, remove_shim};
@@ -29,7 +28,7 @@ pub fn show_info() -> Result<(), Box<dyn Error>> {
 
 pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Error>> {
     if let Some(name) = name {
-        if let Some(package) = packages::Package::load(name)? {
+        if let Some(package) = Package::load(name)? {
             package.print(verbose);
             Ok(())
         } else {
@@ -40,7 +39,7 @@ pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Er
             .into())
         }
     } else {
-        let packages = packages::Package::load_all()?;
+        let packages = Package::load_all()?;
         if !packages.is_empty() {
             for package in &packages {
                 package.print(verbose);
@@ -118,7 +117,7 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
         if package.versions.versions.contains(&version) {
             package.versions.current = version.clone();
             upsert(&name, package)?;
-            info!("'{}' set to version '{}'", name, version);
+            info!("Package '{}' set to version '{}'", name, version);
             Ok(())
         } else {
             Err(format!(

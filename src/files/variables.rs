@@ -28,7 +28,11 @@ impl AppConfig {
     }
 
     pub fn index_path(&self) -> PathBuf {
-        self.base_dir.join("index.json")
+        self.base_dir.join("index")
+    }
+
+    pub fn overrides_path(&self) -> PathBuf {
+        self.base_dir.join("overrides")
     }
 
     pub fn versions_path(&self) -> PathBuf {

@@ -13,7 +13,7 @@ pub struct Package {
 // Public API
 impl Package {
     pub fn new(name: &str, versions_package: VersionsPackage) -> Result<Self, Box<dyn Error>> {
-        let index_packages = crate::files::index::parse()?;
+        let index_packages = crate::files::index::parse(name.to_owned())?;
         let index_package = index_packages
             .packages
             .get(name)
@@ -27,7 +27,9 @@ impl Package {
     }
 
     pub fn load(name: &str) -> Result<Option<Self>, Box<dyn Error>> {
-        let index_package = crate::files::index::parse()?.packages.remove(name);
+        let index_package = crate::files::index::parse(name.to_owned())?
+            .packages
+            .remove(name);
         let versions_package = crate::files::versions::parse()?.packages.remove(name);
         Self::make_from(name, index_package, versions_package)
     }
