@@ -123,8 +123,66 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
     ));
     args.extend(params.iter().cloned());
 
-    let command = format!("docker {}", args.join(" "));
-    run_command(&command, Some(buffer))
+    let command = "docker";
+    run_command_with_args(command, &args, Some(buffer))
+}
+
+fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Vec<u8>>) -> bool {
+    debug!("Running command: {} {:?}", command, args);
+
+    let mut child = Command::new(command)
+        .args(args)
+        .stdout(Stdio::piped()) // Redirect stdout to a pipe
+        .stderr(Stdio::piped()) // Redirect stderr to a pipe
+        .stdin(Stdio::piped()) // Set stdin to piped to write the buffer later
+        .spawn() // Spawn the command
+        .expect("Failed to spawn command");
+
+    // If stdin_buffer is Some, write it to the child's stdin
+    if let Some(buffer) = stdin_buffer {
+        let child_stdin = child.stdin.as_mut().expect("Failed to open stdin");
+        child_stdin
+            .write_all(&buffer)
+            .expect("Failed to write to stdin");
+    }
+
+    // Function to log output from a pipe
+    fn log_output<R: BufRead>(reader: R, log_fn: impl Fn(&str)) {
+        for line in reader.lines() {
+            match line {
+                Ok(line) => log_fn(&line),
+                Err(e) => error!("Failed to read line from output: {}", e),
+            }
+        }
+    }
+
+    // Read the child's stdout and stderr in separate threads and log them
+    let stdout = child.stdout.take().expect("Failed to open stdout");
+    let stderr = child.stderr.take().expect("Failed to open stderr");
+
+    let stdout_thread = std::thread::spawn(move || {
+        log_output(BufReader::new(stdout), |line| info!("{}", line));
+    });
+
+    let stderr_thread = std::thread::spawn(move || {
+        log_output(BufReader::new(stderr), |line| error!("{}", line));
+    });
+
+    // Wait for the command to complete
+    let status = child.wait();
+
+    // Wait for the logging threads to finish
+    let _ = stdout_thread.join();
+    let _ = stderr_thread.join();
+
+    // Check the command status
+    match status {
+        Ok(status) => status.success(),
+        Err(e) => {
+            error!("Command failed to complete: {}", e);
+            false
+        }
+    }
 }
 
 pub fn pull(package: &Package) -> bool {
