@@ -1,8 +1,10 @@
+use crate::files::config::get_config;
 use crate::packages::Package;
 use log::{debug, error, info, warn};
 use std::io::{stdin, BufRead, BufReader, IsTerminal, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::thread;
 
 pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> bool {
     let interactive = !stdin().is_terminal();
@@ -19,10 +21,10 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
         args.push("-i".to_string());
     }
 
-    add_volumes(&package, &mut args);
-    add_current_directory(&package, &mut args);
-    add_environment_variables(&package, &mut args);
-    add_binary_entrypoint(&package, &binary, &mut args);
+    add_volumes(package, &mut args);
+    add_current_directory(package, &mut args);
+    add_environment_variables(package, &mut args);
+    add_binary_entrypoint(package, &binary, &mut args);
 
     args.push(format!(
         "{}:{}",
@@ -77,13 +79,30 @@ fn add_binary_entrypoint(package: &Package, binary: &Option<String>, args: &mut 
     }
 }
 
+fn get_stdio(config: &crate::files::config::Root) -> (Stdio, Stdio) {
+    let stdout = if config.experimental.capture_stdout {
+        Stdio::piped()
+    } else {
+        Stdio::inherit()
+    };
+    let stderr = if config.experimental.capture_stderr {
+        Stdio::piped()
+    } else {
+        Stdio::inherit()
+    };
+    (stdout, stderr)
+}
+
 fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Vec<u8>>) -> bool {
     debug!("Running command: {} {:?}", command, args);
 
+    let config = get_config().unwrap_or_default();
+    let (stdout, stderr) = get_stdio(&config);
+
     let mut child = Command::new(command)
         .args(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stdout(stdout)
+        .stderr(stderr)
         .stdin(Stdio::piped())
         .spawn()
         .expect("Failed to spawn command");
@@ -96,39 +115,52 @@ fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Ve
     }
 
     let stdout_thread = spawn_log_thread(
-        BufReader::new(child.stdout.take().expect("Failed to open stdout")),
+        child.stdout.take(),
         |line| info!("{}", line),
+        config.experimental.capture_stdout,
     );
     let stderr_thread = spawn_log_thread(
-        BufReader::new(child.stderr.take().expect("Failed to open stderr")),
+        child.stderr.take(),
         |line| error!("{}", line),
+        config.experimental.capture_stderr,
     );
 
-    let status = child.wait();
-    let _ = stdout_thread.join();
-    let _ = stderr_thread.join();
+    let status = child.wait().expect("Failed to wait on child process");
 
-    match status {
-        Ok(status) => status.success(),
-        Err(e) => {
-            error!("Command failed to complete: {}", e);
-            false
-        }
+    if let Some(thread) = stdout_thread {
+        let _ = thread.join();
     }
+
+    if let Some(thread) = stderr_thread {
+        let _ = thread.join();
+    }
+
+    status.success()
 }
 
-fn spawn_log_thread<R: BufRead + Send + 'static>(
-    reader: R,
+fn spawn_log_thread<R: Read + Send + 'static>(
+    reader: Option<R>,
     log_fn: impl Fn(&str) + Send + 'static,
-) -> std::thread::JoinHandle<()> {
-    std::thread::spawn(move || {
-        for line in reader.lines() {
+    capture: bool,
+) -> Option<thread::JoinHandle<()>> {
+    if !capture {
+        return None;
+    }
+    let reader = reader.expect("Failed to open reader");
+    Some(thread::spawn(move || {
+        let reader = BufReader::new(reader);
+        for line in reader.split(b'\n') {
             match line {
-                Ok(line) => log_fn(&line),
+                Ok(line) => match std::str::from_utf8(&line) {
+                    Ok(line) => log_fn(line),
+                    Err(_) => error!(
+                        "Failed to read line from output: stream did not contain valid UTF-8"
+                    ),
+                },
                 Err(e) => error!("Failed to read line from output: {}", e),
             }
         }
-    })
+    }))
 }
 
 pub fn pull(package: &Package) -> bool {

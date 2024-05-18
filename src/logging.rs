@@ -10,7 +10,7 @@ use std::path::MAIN_SEPARATOR;
 use std::sync::{Arc, Mutex};
 
 pub fn setup_logger() -> Result<(), Box<dyn Error>> {
-    let logs_config = get_config().map_or_else(|_| Logs::new(), |config| config.logs);
+    let logs_config = get_config().map_or_else(|_| Logs::default(), |config| config.logs);
 
     let config = AppConfig::new();
     let log_file_path = config.logs_path();

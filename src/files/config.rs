@@ -6,9 +6,10 @@ use std::str::FromStr;
 use crate::files::variables::AppConfig;
 use crate::serialization::{parse_json, save_json};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Root {
     pub logs: Logs,
+    pub experimental: Experimental,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -36,8 +37,16 @@ pub enum Strategy {
     Append,
 }
 
-impl Logs {
-    pub fn new() -> Self {
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Experimental {
+    #[serde(default)]
+    pub capture_stdout: bool,
+    #[serde(default)]
+    pub capture_stderr: bool,
+}
+
+impl Default for Logs {
+    fn default() -> Self {
         Self {
             enabled: false,
             level: Level::Info,
@@ -90,7 +99,7 @@ pub fn get_config() -> Result<Root, Box<dyn Error>> {
     if config.config_path().exists() {
         parse_json(&config.config_path())
     } else {
-        let root = Root { logs: Logs::new() };
+        let root = Root::default();
         save_json(&root, &config.config_path())?;
         Ok(root)
     }
