@@ -42,4 +42,8 @@ impl AppConfig {
     pub fn shims_path(&self) -> PathBuf {
         self.base_dir.join("shims")
     }
+
+    pub fn logs_path(&self) -> PathBuf {
+        self.base_dir.join("logs/log.txt")
+    }
 }

@@ -3,11 +3,12 @@ use crate::packages::Package;
 use crate::runner::run;
 use crate::shims::{add_shim, remove_shim};
 use colored::*;
-use log::info;
+use log::{debug, info};
 use std::env;
 use std::error::Error;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
+    debug!("Showing info");
     info!("\n{}:", "System Information".bold().underline());
     info!("{}:", "OS Details".bold());
     info!("  Name          : {}", env::consts::OS.bright_blue());
@@ -27,6 +28,7 @@ pub fn show_info() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Error>> {
+    debug!("Listing packages");
     if let Some(name) = name {
         if let Some(package) = Package::load(name)? {
             package.print(verbose);
@@ -52,6 +54,10 @@ pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Er
 }
 
 pub fn add_package(name: String, version: String, set_default: bool) -> Result<(), Box<dyn Error>> {
+    debug!(
+        "Adding package '{}' version '{}'. Set as default? = {}",
+        &name, &version, set_default
+    );
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
             return Err(format!("'{}' version {} already exists.", name, version).into());
@@ -79,6 +85,11 @@ pub fn add_package(name: String, version: String, set_default: bool) -> Result<(
 }
 
 pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<dyn Error>> {
+    debug!(
+        "Removing version '{}' of '{}'",
+        version.clone().unwrap_or_else(|| "<all>".to_owned()),
+        &name
+    );
     match (Package::load(&name)?, version) {
         (Some(mut package), Some(version)) => {
             if package.versions.current == version && package.versions.versions.len() > 1 {
@@ -113,6 +124,7 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
 }
 
 pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn Error>> {
+    debug!("Setting package '{}' to version '{}'", &name, &version);
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
             package.versions.current = version.clone();
@@ -132,6 +144,7 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
 }
 
 pub fn run_package(name: String, subcommand: Vec<String>) -> Result<(), Box<dyn Error>> {
+    debug!("Running {} {}", &name, &subcommand.join(" "));
     let parts: Vec<&str> = name.split("::").collect();
     let (package_name, binary) = match parts.as_slice() {
         [package_name] => (package_name.to_string(), None),

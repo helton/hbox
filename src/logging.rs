@@ -1,73 +1,115 @@
 use crate::files::config::get_config;
-use colored::Colorize;
-use env_logger::{Builder, Target};
-use log::Level;
-use log::LevelFilter;
-use std::env;
+use crate::files::variables::AppConfig;
+use chrono::Local;
+use log::{Level, LevelFilter, Log, Metadata, Record};
 use std::error::Error;
+use std::fs::{File, OpenOptions};
 use std::io::Write;
+use std::sync::{Arc, Mutex};
 
 pub fn setup_logger() -> Result<(), Box<dyn Error>> {
-    let log_level = match get_config() {
-        Ok(config) => match config.log_level.to_lowercase().as_str() {
-            "info" => LevelFilter::Info,
-            "warn" => LevelFilter::Warn,
-            "debug" => LevelFilter::Debug,
-            "trace" => LevelFilter::Trace,
-            _ => LevelFilter::Error,
-        },
-        Err(_) => LevelFilter::Error,
+    let (log_level, log_strategy) = if let Ok(config) = get_config() {
+        (
+            match config.logs.level.to_lowercase().as_str() {
+                "info" => LevelFilter::Info,
+                "warn" => LevelFilter::Warn,
+                "debug" => LevelFilter::Debug,
+                "trace" => LevelFilter::Trace,
+                _ => LevelFilter::Error,
+            },
+            config.logs.strategy,
+        )
+    } else {
+        (LevelFilter::Info, "truncate".to_string())
     };
 
-    let mut builder = Builder::new();
+    let config = AppConfig::new();
+    let log_file_path = config.logs_path();
 
-    // Log the errors to stderr
-    builder.filter_level(LevelFilter::Error);
-    builder.target(Target::Stderr);
+    // Ensure the logs directory exists
+    if let Some(parent) = log_file_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
 
-    // Customize format
-    builder.format(move |buf, record| {
+    // Open or create the log file
+    let file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(log_strategy == "truncate")
+        .append(log_strategy == "append")
+        .open(log_file_path)?;
+
+    let file = Arc::new(Mutex::new(file));
+
+    // Set the logger
+    log::set_boxed_logger(Box::new(Logger {
+        file: file.clone(),
+        level: log_level,
+    }))?;
+    log::set_max_level(log_level);
+
+    Ok(())
+}
+
+struct Logger {
+    file: Arc<Mutex<File>>,
+    level: LevelFilter,
+}
+
+impl Log for Logger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= self.level
+    }
+
+    fn log(&self, record: &Record) {
+        if !self.enabled(record.metadata()) {
+            return;
+        }
+
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S%.3f");
+
         let file_info = match (record.file(), record.line()) {
             (Some(file), Some(line)) => format!("{}:{}", file, line),
             _ => String::from("unknown"),
         };
 
-        let now = chrono::Local::now();
-        let timestamp = now.format("%Y-%m-%d %H:%M:%S%.3f");
+        let log_line = format!(
+            "[{} {} {}] - {}",
+            timestamp,
+            record.level(),
+            file_info,
+            record.args()
+        );
+
+        if self.level <= LevelFilter::Debug
+            && (record.level() == Level::Info
+                || record.level() == Level::Warn
+                || record.level() == Level::Error)
+        {
+            let mut file = self.file.lock().unwrap();
+            writeln!(file, "{}", log_line).unwrap();
+        }
 
         match record.level() {
-            Level::Trace => {
-                let log_line = format!("[{} TRACE {}] - {}", timestamp, file_info, record.args());
-                writeln!(buf, "{}", log_line.italic())
-            }
-            Level::Debug => {
-                let log_line = format!("[{} DEBUG {}] - {}", timestamp, file_info, record.args());
-                writeln!(buf, "{}", log_line.italic())
+            Level::Trace | Level::Debug => {
+                let mut file = self.file.lock().unwrap();
+                writeln!(file, "{}", log_line).unwrap();
             }
             Level::Info => {
-                let log_line = format!("{}", record.args());
-                writeln!(buf, "{}", log_line)
+                println!("{}", record.args());
             }
             Level::Warn => {
-                let log_line = format!("{}", record.args());
-                writeln!(buf, "{}", log_line.underline())
+                println!("{}", record.args());
             }
             Level::Error => {
-                let log_line = format!("{}", record.args());
-                writeln!(buf, "{}", log_line.red().bold())
+                eprintln!("{}", record.args());
             }
         }
-    });
+    }
 
-    // Log all other stuff to stdout
-    builder.filter(Some("hbox"), log_level);
-    builder.target(Target::Stdout);
-
-    if env::var("RUST_LOG").is_ok() {
-        builder.parse_filters(&env::var("RUST_LOG").unwrap());
-    };
-
-    builder.init();
-
-    Ok(())
+    fn flush(&self) {
+        let mut file = self.file.lock().unwrap();
+        file.flush().unwrap();
+    }
 }

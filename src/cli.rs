@@ -75,7 +75,7 @@ enum Commands {
 
 pub fn run() {
     if let Err(e) = setup_logger() {
-        eprintln!("Could not setup logger {}", e);
+        eprintln!("Could not setup logger: {}", e);
         process::exit(1);
     }
 
