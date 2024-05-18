@@ -2,37 +2,28 @@ use crate::files::versions::{remove, upsert};
 use crate::packages::Package;
 use crate::runner::run;
 use crate::shims::{add_shim, remove_shim};
-use colored::*;
-use log::{debug, info};
+use log::info;
 use std::env;
 use std::error::Error;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
-    debug!("hbox info");
-    info!("\n{}:", "System Information".bold().underline());
-    info!("{}:", "OS Details".bold());
-    info!("  Name          : {}", env::consts::OS.bright_blue());
-    info!("  Architecture  : {}", env::consts::ARCH.bright_blue());
-    info!("  Family        : {}", env::consts::FAMILY.bright_blue());
-    info!("\n{}:", "Application Configuration".bold().underline());
-    info!("Version         : {}", env!("CARGO_PKG_VERSION").green());
+    info!("\n{}:", "System Information");
+    info!("{}:", "OS Details");
+    info!("  Name          : {}", env::consts::OS);
+    info!("  Architecture  : {}", env::consts::ARCH);
+    info!("  Family        : {}", env::consts::FAMILY);
+    info!("\n{}:", "Application Configuration");
+    info!("Version         : {}", env!("CARGO_PKG_VERSION"));
     info!("Environment Vars :");
     info!(
         "  HBOX_DIR       : {}",
-        env::var("HBOX_DIR")
-            .unwrap_or_else(|_| String::from("~/.hbox"))
-            .bright_yellow()
+        env::var("HBOX_DIR").unwrap_or_else(|_| String::from("~/.hbox"))
     );
     info!("\n");
     Ok(())
 }
 
 pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Error>> {
-    debug!(
-        "hbox list {} {}",
-        &name.unwrap_or_else(|| ""),
-        if verbose { "-v" } else { "" }
-    );
     if let Some(name) = name {
         if let Some(package) = Package::load(name)? {
             package.print(verbose);
@@ -58,12 +49,6 @@ pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Er
 }
 
 pub fn add_package(name: String, version: String, set_default: bool) -> Result<(), Box<dyn Error>> {
-    debug!(
-        "hbox add {} {} {}",
-        &name,
-        &version,
-        if set_default { "--set-default" } else { "" }
-    );
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
             return Err(format!("'{}' version {} already exists.", name, version).into());
@@ -91,11 +76,6 @@ pub fn add_package(name: String, version: String, set_default: bool) -> Result<(
 }
 
 pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<dyn Error>> {
-    debug!(
-        "hbox remove {} {}",
-        &name,
-        version.clone().unwrap_or_else(|| "".to_owned())
-    );
     match (Package::load(&name)?, version) {
         (Some(mut package), Some(version)) => {
             if package.versions.current == version && package.versions.versions.len() > 1 {
@@ -129,8 +109,7 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
     }
 }
 
-pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn Error>> {
-    debug!("hbox use {} {}", &name, &version);
+pub fn use_package_version(name: String, version: String) -> Result<(), Box<dyn Error>> {
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
             package.versions.current = version.clone();
@@ -150,7 +129,6 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
 }
 
 pub fn run_package(name: String, subcommand: Vec<String>) -> Result<(), Box<dyn Error>> {
-    debug!("hbox run {} {}", &name, &subcommand.join(" "));
     let parts: Vec<&str> = name.split("::").collect();
     let (package_name, binary) = match parts.as_slice() {
         [package_name] => (package_name.to_string(), None),

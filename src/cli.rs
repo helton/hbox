@@ -1,7 +1,7 @@
 use crate::commands::*;
 use crate::logging::setup_logger;
 use clap::{Parser, Subcommand};
-use log::error;
+use log::{debug, error};
 use std::process;
 
 #[derive(Parser)]
@@ -82,16 +82,43 @@ pub fn run() {
     let cli = Cli::parse();
 
     let result = match &cli.command {
-        Commands::Info => show_info(),
-        Commands::List { name, verbose } => list_packages(name.as_deref(), *verbose),
+        Commands::Info => {
+            debug!("hbox info");
+            show_info()
+        }
+        Commands::List { name, verbose } => {
+            debug!(
+                "hbox list {}{}",
+                name.as_deref().unwrap_or(""),
+                if *verbose { " -v" } else { "" }
+            );
+            list_packages(name.as_deref(), *verbose)
+        }
         Commands::Add {
             name,
             version,
             set_default,
-        } => add_package(name.clone(), version.clone(), *set_default),
-        Commands::Remove { name, version } => remove_package(name.clone(), version.clone()),
-        Commands::Use { name, version } => set_package_version(name.clone(), version.clone()),
-        Commands::Run { name, subcommand } => run_package(name.clone(), subcommand.clone()),
+        } => {
+            debug!(
+                "hbox add {} {}{}",
+                name,
+                version,
+                if *set_default { " --set-default" } else { "" }
+            );
+            add_package(name.clone(), version.clone(), *set_default)
+        }
+        Commands::Remove { name, version } => {
+            debug!("hbox remove {} {}", name, version.as_deref().unwrap_or(""));
+            remove_package(name.clone(), version.clone())
+        }
+        Commands::Use { name, version } => {
+            debug!("hbox use {} {}", name, version);
+            use_package_version(name.clone(), version.clone())
+        }
+        Commands::Run { name, subcommand } => {
+            debug!("hbox run {} {}", name, subcommand.join(" "));
+            run_package(name.clone(), subcommand.clone())
+        }
     };
 
     if let Err(e) = result {
