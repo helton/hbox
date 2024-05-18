@@ -26,33 +26,36 @@ pub fn setup_logger() -> Result<(), Box<dyn Error>> {
     builder.target(Target::Stderr);
 
     // Customize format
-    builder.format(move |buf, record| match record.level() {
-        Level::Debug => {
-            let file_info = match (record.file(), record.line()) {
-                (Some(file), Some(line)) => format!("{}:{}", file, line),
-                _ => String::from("unknown"),
-            };
+    builder.format(move |buf, record| {
+        let file_info = match (record.file(), record.line()) {
+            (Some(file), Some(line)) => format!("{}:{}", file, line),
+            _ => String::from("unknown"),
+        };
 
-            let log_line = format!(
-                "[{} {} {}] {}",
-                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
-                record.target(),
-                file_info,
-                record.args()
-            );
-            writeln!(buf, "{}", log_line)
-        }
-        Level::Error => {
-            let log_line = format!("{}", record.args());
-            writeln!(buf, "{}", log_line.red())
-        }
-        Level::Warn => {
-            let log_line = format!("{}", record.args());
-            writeln!(buf, "{}", log_line.yellow())
-        }
-        _ => {
-            let log_line = format!("{}", record.args());
-            writeln!(buf, "{}", log_line)
+        let now = chrono::Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S%.3f");
+
+        match record.level() {
+            Level::Trace => {
+                let log_line = format!("[{} TRACE {}] - {}", timestamp, file_info, record.args());
+                writeln!(buf, "{}", log_line.italic())
+            }
+            Level::Debug => {
+                let log_line = format!("[{} DEBUG {}] - {}", timestamp, file_info, record.args());
+                writeln!(buf, "{}", log_line.italic())
+            }
+            Level::Info => {
+                let log_line = format!("{}", record.args());
+                writeln!(buf, "{}", log_line)
+            }
+            Level::Warn => {
+                let log_line = format!("{}", record.args());
+                writeln!(buf, "{}", log_line.underline())
+            }
+            Level::Error => {
+                let log_line = format!("{}", record.args());
+                writeln!(buf, "{}", log_line.red().bold())
+            }
         }
     });
 
