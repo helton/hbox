@@ -6,6 +6,11 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
 
+pub fn pull(package: &Package) -> bool {
+    let image = format!("{}:{}", package.index.image, package.versions.current);
+    run_command_with_args("docker", &["pull".to_string(), image], None)
+}
+
 pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> bool {
     let interactive = !stdin().is_terminal();
 
@@ -161,9 +166,4 @@ fn spawn_log_thread<R: Read + Send + 'static>(
             }
         }
     }))
-}
-
-pub fn pull(package: &Package) -> bool {
-    let command = format!("docker pull {}:{}", package.index.image, package.versions.current);
-    run_command_with_args("docker", &[command], None)
 }
