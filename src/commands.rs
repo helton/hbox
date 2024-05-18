@@ -8,7 +8,7 @@ use std::env;
 use std::error::Error;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
-    debug!("Showing info");
+    debug!("hbox info");
     info!("\n{}:", "System Information".bold().underline());
     info!("{}:", "OS Details".bold());
     info!("  Name          : {}", env::consts::OS.bright_blue());
@@ -28,7 +28,11 @@ pub fn show_info() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Error>> {
-    debug!("Listing packages");
+    debug!(
+        "hbox list {} {}",
+        &name.unwrap_or_else(|| ""),
+        if verbose { "-v" } else { "" }
+    );
     if let Some(name) = name {
         if let Some(package) = Package::load(name)? {
             package.print(verbose);
@@ -55,8 +59,10 @@ pub fn list_packages(name: Option<&str>, verbose: bool) -> Result<(), Box<dyn Er
 
 pub fn add_package(name: String, version: String, set_default: bool) -> Result<(), Box<dyn Error>> {
     debug!(
-        "Adding package '{}' version '{}'. Set as default? = {}",
-        &name, &version, set_default
+        "hbox add {} {} {}",
+        &name,
+        &version,
+        if set_default { "--set-default" } else { "" }
     );
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
@@ -86,9 +92,9 @@ pub fn add_package(name: String, version: String, set_default: bool) -> Result<(
 
 pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<dyn Error>> {
     debug!(
-        "Removing version '{}' of '{}'",
-        version.clone().unwrap_or_else(|| "<all>".to_owned()),
-        &name
+        "hbox remove {} {}",
+        &name,
+        version.clone().unwrap_or_else(|| "".to_owned())
     );
     match (Package::load(&name)?, version) {
         (Some(mut package), Some(version)) => {
@@ -124,7 +130,7 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
 }
 
 pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn Error>> {
-    debug!("Setting package '{}' to version '{}'", &name, &version);
+    debug!("hbox use {} {}", &name, &version);
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
             package.versions.current = version.clone();
@@ -144,7 +150,7 @@ pub fn set_package_version(name: String, version: String) -> Result<(), Box<dyn 
 }
 
 pub fn run_package(name: String, subcommand: Vec<String>) -> Result<(), Box<dyn Error>> {
-    debug!("Running {} {}", &name, &subcommand.join(" "));
+    debug!("hbox run {} {}", &name, &subcommand.join(" "));
     let parts: Vec<&str> = name.split("::").collect();
     let (package_name, binary) = match parts.as_slice() {
         [package_name] => (package_name.to_string(), None),
