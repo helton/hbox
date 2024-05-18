@@ -3,13 +3,9 @@
 List of ideas I want to implement in the future.
 
 - Miscellaneous:
-  - Setup logger
-  - Migrate Python GitHub workflows from previous version to a Rust compatible one 
   - Support `podman`
   - Support private registries and mirrors
    - maybe via registry mapping in `config.json`?
-  - Support local overrides for package versions
-   - use merged version to allow partial overrides?
   - Create an index/registry repository
    - Use shards to get better performance in git repositories
      - References:
@@ -17,12 +13,15 @@ List of ideas I want to implement in the future.
        - https://github.com/Homebrew/homebrew-cask
        - https://github.com/opentofu/opentofu/issues/741#issuecomment-1777544250
    - Double check if registered packages are available locally before using them
-   - Separate `index.json` from `config.json`
-     - Allow use to override `index.json` retrieved from centralized index/repo
-  - Allow to use binaries inside existing packages (maybe as subpackages?)
-   - examples:
-     - use `wget` from `busybox` image
-     - use `rustc` and `cargo` from `rust` image
+   - Expand env variables when passing them to the container
+   - Manage volumes to avoid lose data
+   - Make it easier to build custom images based on templates
+     - pass relevant build args, like IMAGE_NAME and IMAGE_VERSION
+   - Allow force flags in docker run, based on pattern matching
+     - useful for REPL commands
+   - Try to update config files from `.json` to `.yaml` or `.toml`
+   - Make sure we create all folders and files it they don't exist
+   - Write debug output into log files
 - New commands
   - Add auto update `hbox upgrade`
   - Add `hbox update` to update index
