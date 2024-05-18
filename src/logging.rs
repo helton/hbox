@@ -1,6 +1,6 @@
-use crate::files::config::Strategy::{Append, Truncate};
-use crate::files::config::{get_config, Logs};
-use crate::files::variables::AppConfig;
+use crate::configs::app::AppConfig;
+use crate::configs::user::Strategy::{Append, Truncate};
+use crate::configs::user::UserConfig;
 use chrono::Local;
 use log::{Level, LevelFilter, Log, Metadata, Record};
 use std::error::Error;
@@ -10,9 +10,9 @@ use std::path::MAIN_SEPARATOR;
 use std::sync::{Arc, Mutex};
 
 pub fn setup_logger() -> Result<(), Box<dyn Error>> {
-    let logs_config = get_config().map_or_else(|_| Logs::default(), |config| config.logs);
+    let logs_config = UserConfig::load().unwrap_or_default().logs;
 
-    let config = AppConfig::new();
+    let config = AppConfig::load();
     let log_file_path = config.logs_path().join("logs.txt");
 
     // Ensure the logs directory exists

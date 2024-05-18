@@ -1,4 +1,4 @@
-use crate::files::config::get_config;
+use crate::configs::user::UserConfig;
 use crate::packages::Package;
 use log::{debug, error, info, warn};
 use std::io::{stdin, BufRead, BufReader, IsTerminal, Read, Write};
@@ -79,7 +79,7 @@ fn add_binary_entrypoint(package: &Package, binary: &Option<String>, args: &mut 
     }
 }
 
-fn get_stdio(config: &crate::files::config::Root) -> (Stdio, Stdio) {
+fn get_stdio(config: &crate::configs::user::Root) -> (Stdio, Stdio) {
     let stdout = if config.experimental.capture_stdout {
         Stdio::piped()
     } else {
@@ -96,7 +96,7 @@ fn get_stdio(config: &crate::files::config::Root) -> (Stdio, Stdio) {
 fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Vec<u8>>) -> bool {
     debug!("Running command: {} {:?}", command, args);
 
-    let config = get_config().unwrap_or_default();
+    let config = UserConfig::load().unwrap_or_default();
     let (stdout, stderr) = get_stdio(&config);
 
     let mut child = Command::new(command)
@@ -164,6 +164,6 @@ fn spawn_log_thread<R: Read + Send + 'static>(
 }
 
 pub fn pull(package: &Package) -> bool {
-    let command = format!("docker pull {}", package.container_image_url());
+    let command = format!("docker pull {}:{}", package.index.image, package.versions.current);
     run_command_with_args("docker", &[command], None)
 }

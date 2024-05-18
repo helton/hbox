@@ -1,11 +1,11 @@
-use crate::files::variables::AppConfig;
+use crate::configs::app::AppConfig;
 use log::debug;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 
 pub fn add_shim(name: &str, binary: Option<&str>) -> std::io::Result<()> {
-    let config = AppConfig::new();
+    let config = AppConfig::load();
     let shim_name = binary.unwrap_or_else(|| name);
     let shims_file_path = get_shims_path(shim_name, config);
 
@@ -41,7 +41,7 @@ pub fn add_shim(name: &str, binary: Option<&str>) -> std::io::Result<()> {
 }
 
 pub fn remove_shim(name: &str) -> std::io::Result<()> {
-    let config = AppConfig::new();
+    let config = AppConfig::load();
     let shims_file_path = get_shims_path(name, config);
 
     if shims_file_path.exists() {

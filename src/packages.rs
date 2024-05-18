@@ -1,6 +1,6 @@
-use crate::files::index::Package as IndexPackage;
-use crate::files::variables::AppConfig;
-use crate::files::versions::Package as VersionsPackage;
+use crate::configs::app::AppConfig;
+use crate::configs::index::Package as PackageIndex;
+use crate::configs::version::Package as PackageVersion;
 use log::{debug, info};
 use std::error::Error;
 use std::fs;
@@ -8,14 +8,14 @@ use std::fs;
 #[derive(Debug, Clone)]
 pub struct Package {
     pub name: String,
-    pub index: IndexPackage,
-    pub versions: VersionsPackage,
+    pub index: PackageIndex,
+    pub versions: PackageVersion,
 }
 
 // Public API
 impl Package {
-    pub fn new(name: &str, versions_package: VersionsPackage) -> Result<Self, Box<dyn Error>> {
-        let index_package = crate::files::index::parse(name.to_owned())?;
+    pub fn new(name: &str, versions_package: PackageVersion) -> Result<Self, Box<dyn Error>> {
+        let index_package = crate::configs::index::IndexConfig::load(name.to_owned())?;
         Ok(Self {
             name: String::from(name),
             index: index_package,
@@ -24,8 +24,8 @@ impl Package {
     }
 
     pub fn load(name: &str) -> Result<Option<Self>, Box<dyn Error>> {
-        if let Some(versions_package) = crate::files::versions::parse(name.to_owned())? {
-            let index_package = crate::files::index::parse(name.to_owned())?;
+        if let Some(versions_package) = crate::configs::version::VersionConfig::load(name.to_owned())? {
+            let index_package = crate::configs::index::IndexConfig::load(name.to_owned())?;
             let package = Self::make_from(name, index_package, versions_package)?;
             Ok(Some(package))
         } else {
@@ -35,7 +35,7 @@ impl Package {
 
     pub fn load_all() -> Result<Vec<Self>, Box<dyn Error>> {
         let mut packages: Vec<Self> = Vec::new();
-        let config = AppConfig::new();
+        let config = AppConfig::load();
         for entry in fs::read_dir(config.versions_path())? {
             let entry = entry?;
             let path = entry.path();
@@ -53,10 +53,6 @@ impl Package {
             }
         }
         Ok(packages)
-    }
-
-    pub fn container_image_url(&self) -> String {
-        format!("{}:{}", self.index.image, self.versions.current)
     }
 
     pub fn print(&self, verbose: bool) {
@@ -101,8 +97,8 @@ impl Package {
 impl Package {
     fn make_from(
         name: &str,
-        index_package: IndexPackage,
-        versions_package: VersionsPackage,
+        index_package: PackageIndex,
+        versions_package: PackageVersion,
     ) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
             name: String::from(name),

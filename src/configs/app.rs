@@ -10,7 +10,7 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub fn new() -> Self {
+    pub fn load() -> Self {
         let base_dir = Self::resolve_env(ConfigKey::BaseDir);
         AppConfig { base_dir }
     }
@@ -23,7 +23,7 @@ impl AppConfig {
         }
     }
 
-    pub fn config_path(&self) -> PathBuf {
+    pub fn config_file_path(&self) -> PathBuf {
         self.base_dir.join("config.json")
     }
 

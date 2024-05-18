@@ -1,6 +1,6 @@
 pub mod cli;
 pub mod commands;
-pub mod files;
+pub mod configs;
 pub mod logging;
 pub mod packages;
 pub mod runner;

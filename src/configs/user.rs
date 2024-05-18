@@ -3,8 +3,23 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::str::FromStr;
 
-use crate::files::variables::AppConfig;
+use crate::configs::app::AppConfig;
 use crate::serialization::{parse_json, save_json};
+
+pub struct UserConfig {}
+
+impl UserConfig {
+    pub fn load() -> Result<Root, Box<dyn Error>> {
+        let config = AppConfig::load();
+        if config.config_file_path().exists() {
+            parse_json(&config.config_file_path())
+        } else {
+            let root = Root::default();
+            save_json(&root, &config.config_file_path())?;
+            Ok(root)
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Root {
@@ -91,16 +106,5 @@ impl FromStr for Strategy {
             "append" => Ok(Strategy::Append),
             _ => Err(()),
         }
-    }
-}
-
-pub fn get_config() -> Result<Root, Box<dyn Error>> {
-    let config = AppConfig::new();
-    if config.config_path().exists() {
-        parse_json(&config.config_path())
-    } else {
-        let root = Root::default();
-        save_json(&root, &config.config_path())?;
-        Ok(root)
     }
 }

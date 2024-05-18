@@ -1,30 +1,31 @@
-use crate::files::versions::{remove, upsert};
+use crate::configs::app::AppConfig;
 use crate::packages::Package;
 use crate::runner::run;
 use crate::shims::{add_shim, remove_shim};
 use log::info;
 use std::env;
 use std::error::Error;
-use crate::files::variables::AppConfig;
+use crate::configs::version::VersionConfig;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
-    let config = AppConfig::new();
+    let config = AppConfig::load();
     info!("");
     info!("[System Information]");
     info!("OS Details:");
-    info!("  Name          : {}", env::consts::OS);
-    info!("  Architecture  : {}", env::consts::ARCH);
-    info!("  Family        : {}", env::consts::FAMILY);
+    info!("  Name           : {}", env::consts::OS);
+    info!("  Architecture   : {}", env::consts::ARCH);
+    info!("  Family         : {}", env::consts::FAMILY);
     info!("");
     info!("[Application Configuration]");
     info!("Version          : {}", env!("CARGO_PKG_VERSION"));
-    info!("Directories:");
-    info!("  base           : {}", config.base_dir.to_str().unwrap_or_else(|| ""));
-    info!("  shims          : {}", config.shims_path().to_str().unwrap_or_else(|| ""));
-    info!("  overrides      : {}", config.overrides_path().to_str().unwrap_or_else(|| ""));
-    info!("  index          : {}", config.index_path().to_str().unwrap_or_else(|| ""));
-    info!("  logs           : {}", config.logs_path().to_str().unwrap_or_else(|| ""));
-    info!("  versions       : {}", config.versions_path().to_str().unwrap_or_else(|| ""));
+    info!("Directories and Files:");
+    info!("  base dir       : {}", config.base_dir.to_str().unwrap_or_else(|| ""));
+    info!("  config file    : {}", config.config_file_path().to_str().unwrap_or_else(|| ""));
+    info!("  overrides dir  : {}", config.overrides_path().to_str().unwrap_or_else(|| ""));
+    info!("  versions dir   : {}", config.versions_path().to_str().unwrap_or_else(|| ""));
+    info!("  logs dir       : {}", config.logs_path().to_str().unwrap_or_else(|| ""));
+    info!("  shims dir      : {}", config.shims_path().to_str().unwrap_or_else(|| ""));
+    info!("  index dir      : {}", config.index_path().to_str().unwrap_or_else(|| ""));
     info!("Environment Vars:");
     info!("  HBOX_DIR       : {}", config.base_dir.to_str().unwrap_or_else(|| ""));
     Ok(())
@@ -72,7 +73,7 @@ pub fn add_package(name: String, version: String, set_default: bool) -> Result<(
             name, version, current
         );
     } else {
-        let package = Package::new(&name, crate::files::versions::Package::new(&version))?;
+        let package = Package::new(&name, crate::configs::version::Package::new(&version))?;
         do_add_package(&name, &version, package)?;
         info!(
             "Added '{}' version '{}'. Current version is '{}'.",
@@ -98,7 +99,7 @@ pub fn remove_package(name: String, version: Option<String>) -> Result<(), Box<d
                         do_remove_package(package)?;
                         info!("Removed package '{}'.", name);
                     } else {
-                        upsert(&name, package)?;
+                        VersionConfig::upsert(&name, package)?;
                         info!("Removed version '{}' of '{}'.", version, name);
                     }
                     Ok(())
@@ -120,7 +121,7 @@ pub fn use_package_version(name: String, version: String) -> Result<(), Box<dyn 
     if let Some(mut package) = Package::load(&name)? {
         if package.versions.versions.contains(&version) {
             package.versions.current = version.clone();
-            upsert(&name, package)?;
+            VersionConfig::upsert(&name, package)?;
             info!("Package '{}' set to version '{}'", name, version);
             Ok(())
         } else {
@@ -163,7 +164,7 @@ fn do_add_package(name: &String, version: &String, package: Package) -> Result<(
                 add_shim(&name, Some(&binary.name))?;
             }
         }
-        upsert(&name, package)?;
+        VersionConfig::upsert(&name, package)?;
         Ok(())
     } else {
         Err(format!("Failed to add package '{}' at version '{}'.", name, version).into())
@@ -171,7 +172,7 @@ fn do_add_package(name: &String, version: &String, package: Package) -> Result<(
 }
 
 fn do_remove_package(package: Package) -> Result<(), Box<dyn Error>> {
-    remove(&package.name)?;
+    VersionConfig::remove(&package.name)?;
     if !&package.index.only_shim_binaries {
         remove_shim(&package.name)?;
     }
