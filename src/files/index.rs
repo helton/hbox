@@ -58,7 +58,10 @@ fn load_package(
     index_path: &Path,
     overrides_path: &Path,
 ) -> Result<Package, Box<dyn Error>> {
-    let index_file = index_path.join(format!("{}.json", name));
+    let shard_dir = name.chars().next().unwrap().to_string().to_lowercase();
+    let index_file = index_path
+        .join(&Path::new(&shard_dir))
+        .join(format!("{}.json", name));
     let override_file = overrides_path.join(format!("{}.json", name));
 
     if override_file.exists() {
