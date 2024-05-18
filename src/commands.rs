@@ -5,21 +5,28 @@ use crate::shims::{add_shim, remove_shim};
 use log::info;
 use std::env;
 use std::error::Error;
+use crate::files::variables::AppConfig;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
-    info!("\n{}:", "System Information");
-    info!("{}:", "OS Details");
+    let config = AppConfig::new();
+    info!("");
+    info!("[System Information]");
+    info!("OS Details:");
     info!("  Name          : {}", env::consts::OS);
     info!("  Architecture  : {}", env::consts::ARCH);
     info!("  Family        : {}", env::consts::FAMILY);
-    info!("\n{}:", "Application Configuration");
-    info!("Version         : {}", env!("CARGO_PKG_VERSION"));
-    info!("Environment Vars :");
-    info!(
-        "  HBOX_DIR       : {}",
-        env::var("HBOX_DIR").unwrap_or_else(|_| String::from("~/.hbox"))
-    );
-    info!("\n");
+    info!("");
+    info!("[Application Configuration]");
+    info!("Version          : {}", env!("CARGO_PKG_VERSION"));
+    info!("Directories:");
+    info!("  base           : {}", config.base_dir.to_str().unwrap_or_else(|| ""));
+    info!("  shims          : {}", config.shims_path().to_str().unwrap_or_else(|| ""));
+    info!("  overrides      : {}", config.overrides_path().to_str().unwrap_or_else(|| ""));
+    info!("  index          : {}", config.index_path().to_str().unwrap_or_else(|| ""));
+    info!("  logs           : {}", config.logs_path().to_str().unwrap_or_else(|| ""));
+    info!("  versions       : {}", config.versions_path().to_str().unwrap_or_else(|| ""));
+    info!("Environment Vars:");
+    info!("  HBOX_DIR       : {}", config.base_dir.to_str().unwrap_or_else(|| ""));
     Ok(())
 }
 

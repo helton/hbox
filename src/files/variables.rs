@@ -6,7 +6,7 @@ pub enum ConfigKey {
 }
 
 pub struct AppConfig {
-    base_dir: PathBuf,
+    pub base_dir: PathBuf,
 }
 
 impl AppConfig {
@@ -44,6 +44,6 @@ impl AppConfig {
     }
 
     pub fn logs_path(&self) -> PathBuf {
-        self.base_dir.join("logs/log.txt")
+        self.base_dir.join("logs")
     }
 }

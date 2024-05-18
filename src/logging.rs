@@ -13,7 +13,7 @@ pub fn setup_logger() -> Result<(), Box<dyn Error>> {
     let logs_config = get_config().map_or_else(|_| Logs::default(), |config| config.logs);
 
     let config = AppConfig::new();
-    let log_file_path = config.logs_path();
+    let log_file_path = config.logs_path().join("logs.txt");
 
     // Ensure the logs directory exists
     if let Some(parent) = log_file_path.parent() {
