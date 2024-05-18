@@ -1,4 +1,5 @@
 use crate::files::variables::AppConfig;
+use log::debug;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
@@ -10,6 +11,7 @@ pub fn add_shim(name: &str, binary: Option<&str>) -> std::io::Result<()> {
 
     if !shims_file_path.exists() {
         fs::create_dir_all(shims_file_path.parent().unwrap())?;
+        debug!("Creating shim {:?}", &shims_file_path);
         let mut shim_file = File::create(&shims_file_path)?;
 
         let command = match binary {
@@ -43,6 +45,7 @@ pub fn remove_shim(name: &str) -> std::io::Result<()> {
     let shims_file_path = get_shims_path(name, config);
 
     if shims_file_path.exists() {
+        debug!("Removing shim {:?}", &shims_file_path);
         fs::remove_file(shims_file_path)?;
     }
     Ok(())

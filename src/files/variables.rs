@@ -36,7 +36,7 @@ impl AppConfig {
     }
 
     pub fn versions_path(&self) -> PathBuf {
-        self.base_dir.join("versions.json")
+        self.base_dir.join("versions")
     }
 
     pub fn shims_path(&self) -> PathBuf {

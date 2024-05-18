@@ -2,14 +2,8 @@ use crate::files::variables::AppConfig;
 use crate::serialization::parse_json;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Root {
-    pub packages: HashMap<String, Package>,
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
@@ -66,23 +60,23 @@ fn load_package(
 
     if override_file.exists() {
         debug!("Using override config at {:?}", &override_file);
-        parse_json(&override_file)
+        Ok(parse_json(&override_file)?)
+    } else if index_file.exists() {
+        debug!("Using index config at {:?}", &index_file);
+        Ok(parse_json(&index_file)?)
     } else {
-        debug!("Using normal config at {:?}", &index_file);
-        parse_json(&index_file)
+        debug!("No config file found for {}, using default values", &name);
+        Ok(Package::new(name))
     }
 }
 
-pub fn parse(name: String) -> Result<Root, Box<dyn Error>> {
+pub fn parse(name: String) -> Result<Package, Box<dyn Error>> {
     let config = AppConfig::new();
     let index_path = config.index_path().to_owned();
     let package_dir = Path::new(&index_path);
     let overrides_path = config.overrides_path().to_owned();
     let overrides_dir = Path::new(&overrides_path);
-    let mut packages = HashMap::new();
-
     let package = load_package(&name, package_dir, overrides_dir)?;
-    packages.insert(name, package);
 
-    Ok(Root { packages })
+    Ok(package)
 }

@@ -1,7 +1,9 @@
 use crate::files::index::Package as IndexPackage;
+use crate::files::variables::AppConfig;
 use crate::files::versions::Package as VersionsPackage;
-use log::info;
+use log::{debug, info};
 use std::error::Error;
+use std::fs;
 
 #[derive(Debug, Clone)]
 pub struct Package {
@@ -13,12 +15,7 @@ pub struct Package {
 // Public API
 impl Package {
     pub fn new(name: &str, versions_package: VersionsPackage) -> Result<Self, Box<dyn Error>> {
-        let index_packages = crate::files::index::parse(name.to_owned())?;
-        let index_package = index_packages
-            .packages
-            .get(name)
-            .map(|pkg| pkg.to_owned())
-            .unwrap_or_else(|| IndexPackage::new(name));
+        let index_package = crate::files::index::parse(name.to_owned())?;
         Ok(Self {
             name: String::from(name),
             index: index_package,
@@ -27,23 +24,34 @@ impl Package {
     }
 
     pub fn load(name: &str) -> Result<Option<Self>, Box<dyn Error>> {
-        let index_package = crate::files::index::parse(name.to_owned())?
-            .packages
-            .remove(name);
-        let versions_package = crate::files::versions::parse()?.packages.remove(name);
-        Self::make_from(name, index_package, versions_package)
+        if let Some(versions_package) = crate::files::versions::parse(name.to_owned())? {
+            let index_package = crate::files::index::parse(name.to_owned())?;
+            let package = Self::make_from(name, index_package, versions_package)?;
+            Ok(Some(package))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn load_all() -> Result<Vec<Self>, Box<dyn Error>> {
-        let versions_config = crate::files::versions::parse()?;
         let mut packages: Vec<Self> = Vec::new();
+        let config = AppConfig::new();
+        for entry in fs::read_dir(config.versions_path())? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") {
+                let name = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .ok_or("Invalid package name")?
+                    .to_string();
 
-        for name in versions_config.packages.keys() {
-            if let Some(package) = Self::load(name)? {
-                packages.push(package);
+                if let Some(package) = Self::load(&name)? {
+                    debug!("Loading package {}", name);
+                    packages.push(package);
+                }
             }
         }
-
         Ok(packages)
     }
 
@@ -93,21 +101,13 @@ impl Package {
 impl Package {
     fn make_from(
         name: &str,
-        index_package: Option<IndexPackage>,
-        versions_package: Option<VersionsPackage>,
-    ) -> Result<Option<Self>, Box<dyn Error>> {
-        match (index_package, versions_package) {
-            (Some(index_package), Some(versions_package)) => Ok(Some(Self {
-                name: String::from(name),
-                index: index_package,
-                versions: versions_package,
-            })),
-            (None, Some(versions_package)) => Ok(Some(Self {
-                name: String::from(name),
-                index: IndexPackage::new(name),
-                versions: versions_package,
-            })),
-            (_, None) => Ok(None),
-        }
+        index_package: IndexPackage,
+        versions_package: VersionsPackage,
+    ) -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
+            name: String::from(name),
+            index: index_package,
+            versions: versions_package,
+        })
     }
 }
