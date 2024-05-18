@@ -1,7 +1,6 @@
 use crate::packages::Package;
-use atty::Stream;
-use log::{debug, error};
-use std::io::{self, Read, Write};
+use log::{debug, error, warn};
+use std::io::{stdin, IsTerminal, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
@@ -39,11 +38,11 @@ fn run_command(command: &str, stdin_buffer: Option<Vec<u8>>) -> bool {
 }
 
 pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> bool {
-    let interactive = !atty::is(Stream::Stdin);
+    let interactive = !stdin().is_terminal();
 
     let mut buffer = Vec::new();
     if interactive {
-        io::stdin()
+        stdin()
             .read_to_end(&mut buffer)
             .expect("Failed to read stdin");
     }
@@ -60,7 +59,7 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
                 args.push("-v".to_string());
                 args.push(format!("{}:{}", &source, volume.target));
             } else {
-                debug!("Volume source '{}' not found. Skipping.", source);
+                warn!("Volume source '{}' not found. Skipping.", source);
             }
         }
     }

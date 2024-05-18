@@ -1,6 +1,6 @@
 use crate::files::variables::AppConfig;
 use crate::serialization::{parse_json, save_json};
-use log::{debug};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
