@@ -13,12 +13,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Print debug information
+    /// Print debug information about the hbox environment and configuration
     Info,
 
     /// List all installed packages and their versions
     List {
-        /// Show all versions for a given package
+        /// Show all versions for a specific package
         name: Option<String>,
 
         /// Show additional information, like image, volumes, binaries, etc.
@@ -26,7 +26,7 @@ enum Commands {
         verbose: bool,
     },
 
-    /// Add a specific version of a package
+    /// Add and install a specific version of a package
     #[command(alias = "install")]
     Add {
         /// Name of the package to install
@@ -36,49 +36,49 @@ enum Commands {
         #[arg(default_value = "latest")]
         version: String,
 
-        /// Set the added version as the current version
+        /// Set the added version as the current default version
         #[arg(long, short)]
         set_default: bool,
     },
 
-    /// Remove a package
+    /// Remove a specific version of a package
     #[command(alias = "uninstall")]
     Remove {
         /// The name of the package to remove
         name: String,
 
-        /// Version of the package
+        /// Version of the package to remove
         version: Option<String>,
     },
 
-    /// Set current version of a package
+    /// Set the current version of a package as the default
     #[command(alias = "set")]
     Use {
-        /// Name of the package to set the version of
+        /// Name of the package to set the version for
         name: String,
 
-        /// New version to set as current
+        /// New version to set as the current default
         version: String,
     },
 
-    /// Run the package
+    /// Run a command from a package
     #[command(disable_help_flag = true)]
     Run {
         /// Name of the package to run
         name: String,
 
-        /// Arguments to pass to the package
+        /// Arguments to pass to the package's command
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         subcommand: Vec<String>,
     },
 
-    /// Configure settings
+    /// Configure hbox settings
     #[command(alias = "configure")]
     Config {
-        /// Configuration path
+        /// Configuration path to set or get
         path: String,
 
-        /// Configuration value
+        /// Configuration value to set (omit to get the current value)
         value: Option<String>,
     },
 }
