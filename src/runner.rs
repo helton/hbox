@@ -1,13 +1,12 @@
+use crate::configs::index::Binary;
 use crate::configs::user::UserConfig;
 use crate::packages::Package;
 use log::{debug, error, info, warn};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::io::{stdin, BufRead, BufReader, IsTerminal, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
-use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
-use crate::configs::index::Binary;
 
 pub fn pull(package: &Package) -> bool {
     let image = format!("{}:{}", package.index.image, package.versions.current);
@@ -16,7 +15,6 @@ pub fn pull(package: &Package) -> bool {
 
 pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> bool {
     let interactive = !stdin().is_terminal();
-
     let mut buffer = Vec::new();
     if interactive {
         stdin()
@@ -25,11 +23,11 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
     }
 
     let mut args = vec!["run".to_string()];
-    if interactive {
-        args.push("-i".to_string());
+    args.push(if interactive {
+        "-i".to_string()
     } else {
-        args.push("-it".to_string());
-    }
+        "-it".to_string()
+    });
 
     let binary = get_binary(package, &binary);
 
@@ -43,7 +41,10 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
 
     if should_wrap_args(binary) {
         debug!("Wrapping params in quotes");
-        let escaped_params: Vec<String> = params.iter().map(|param| param.replace("\"", "\\\"")).collect();
+        let escaped_params: Vec<String> = params
+            .iter()
+            .map(|param| param.replace("\"", "\\\""))
+            .collect();
         args.push(escaped_params.join(" "));
     } else {
         args.extend(params.iter().cloned());
@@ -57,21 +58,24 @@ fn should_wrap_args(binary: Option<&Binary>) -> bool {
 }
 
 fn generate_random_name(package: &Package) -> String {
-    let id: String = thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
+    let id: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect();
     format!("hbox-{}-{}-{}", package.name, package.versions.current, id)
 }
 
 fn add_default_flags(package: &Package, args: &mut Vec<String>) {
     args.push("--rm".to_string());
     args.push("--name".to_string());
-    args.push(generate_random_name(&package))
+    args.push(generate_random_name(package));
 }
 
 fn add_container_image(package: &Package, args: &mut Vec<String>) {
     args.push(format!(
         "{}:{}",
-        package.index.image.clone(),
-        package.versions.current
+        package.index.image, package.versions.current
     ));
 }
 
@@ -122,19 +126,19 @@ fn add_binary_cmd(binary: Option<&Binary>, args: &mut Vec<String>) {
 }
 
 fn get_binary<'a>(package: &'a Package, binary: &Option<String>) -> Option<&'a Binary> {
-    if let Some(b) = binary {
-        if let Some(binaries) = &package.index.binaries {
-            for binary in binaries {
-                if binary.name == *b {
-                    return Some(binary)
-                }
-            }
-        }
-    }
-    None
+    binary.as_ref().and_then(|b| {
+        package
+            .index
+            .binaries
+            .as_ref()
+            .and_then(|binaries| binaries.iter().find(|binary| binary.name == *b))
+    })
 }
 
-fn get_stdio(config: &crate::configs::user::Root, stdin_buffer: &Option<Vec<u8>>) -> (Stdio, Stdio, Stdio) {
+fn get_stdio(
+    config: &crate::configs::user::Root,
+    stdin_buffer: &Option<Vec<u8>>,
+) -> (Stdio, Stdio, Stdio) {
     let stdin = if let Some(b) = stdin_buffer {
         if b.is_empty() {
             Stdio::inherit()
@@ -150,7 +154,6 @@ fn get_stdio(config: &crate::configs::user::Root, stdin_buffer: &Option<Vec<u8>>
     } else {
         Stdio::inherit()
     };
-
     let stderr = if config.experimental.capture_stderr {
         Stdio::piped()
     } else {
@@ -175,7 +178,7 @@ fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Ve
         .expect("Failed to spawn command");
 
     if let Some(buffer) = stdin_buffer {
-        if buffer.len() > 0 {
+        if !buffer.is_empty() {
             let child_stdin = child.stdin.as_mut().expect("Failed to open stdin");
             child_stdin
                 .write_all(&buffer)
