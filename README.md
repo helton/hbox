@@ -62,149 +62,101 @@ export PATH="$HBOX_DIR/shims":$PATH
 
 If you installed hbox via `cargo` the `hbox` binary should already be available on your `PATH` env var when the shims are executed.
 
-### Package Registry/Index via index.json
+### Package Registry/Index
 
-The registry/index of packages in hbox is managed by the `$HBOX_DIR/index.json` file (example below).  This file is intended to keep information about usual package configuration.
+The registry/index of packages in hbox is managed in the `$HBOX_DIR/index` directory.
+Inside there a sharded structure where every package as an individual file is intended to keep information about usual package configuration.
 In the future this will be centralized in on its own repo/server, so you can fetch it on demand.
+
+Example of a `$HBOX_DIR/index/g/golang.json`:
 
 ```json
 {
-  "packages": {
-    "busybox": {
-      "image": "docker.io/busybox",
-      "volumes": [
-        {
-          "source": ".",
-          "target": "/app"
-        }
-      ],
-      "current_directory": "/app",
-      "binaries": [
-        {
-          "name": "tree",
-          "path": "/bin/tree"
-        }
-      ],
-      "only_shim_binaries": true,
-      "environment_variables": [
-        {
-          "name": "FOO",
-          "value": "abc123"
-        },
-        {
-          "name": "HTTP_PROXY",
-          "value": "$HTTP_PROXY"
-        },
-        {
-          "name": "HTTPS_PROXY",
-          "value": "$HTTPS_PROXY"
-        },
-        {
-          "name": "NO_PROXY",
-          "value": "$NO_PROXY"
-        }
-      ]
-    },
-    "golang": {
-      "image": "docker.io/golang",
-      "volumes": [
-        {
-          "source": ".",
-          "target": "/app"
-        }
-      ],
-      "current_directory": "/app",
-      "binaries": [
-        {
-          "name": "go",
-          "path": "/usr/local/go/bin/go"
-        },
-        {
-          "name": "gofmt",
-          "path": "/usr/local/go/bin/gofmt"
-        }
-      ],
-      "only_shim_binaries": true
-    },
-    "curl": {
-      "image": "docker.io/curlimages/curl"
-    },
-    "aws": {
-      "image": "docker.io/amazon/aws-cli",
-      "volumes": [
-        {
-          "source": "~/.aws",
-          "target": "/root/.aws"
-        }
-      ],
-      "current_directory": "/root/.aws"
-    },
-    "lambda_python": {
-      "image": "public.ecr.aws/lambda/python"
-    },
-    "jq": {
-      "image": "ghcr.io/jqlang/jq"
-    },
-    "terraform": {
-      "image": "docker.io/hashicorp/terraform"
-    },
-    "opa": {
-      "image": "docker.io/openpolicyagent/opa"
-    },
-    "fga": {
-      "image": "docker.io/openfga/cli"
+  "image": "docker.io/golang",
+  "volumes": [
+    {
+      "source": ".",
+      "target": "//app"
     }
+  ],
+  "current_directory": "//app",
+  "binaries": [
+    {
+      "name": "go",
+      "path": "//usr/local/go/bin/go"
+    },
+    {
+      "name": "gofmt",
+      "path": "//usr/local/go/bin/gofmt"
+    }
+  ],
+  "only_shim_binaries": true
+}
+```
+
+### Override configurations
+
+If you want to override configurations of a package, don't change the `$HBOX_DIR/index` folder, but create an override file inside `$HBOX_DIR/overrides`.
+This directory is not sharded, so you can just place your `<package>.json` files there.
+As the name implies, the override configuration will take precedence over the index ones. The files contents won't be merged in memory.
+
+Example of a `$HBOX_DIR/overrides/aws.json`:
+
+```json
+{
+  "image": "docker.io/amazon/aws-cli",
+  "volumes": [
+    {
+      "source": "~/.aws",
+      "target": "/root/.aws"
+    }
+  ],
+  "current_directory": "/root/.aws"
+}
+```
+
+### Configuration via config.json
+
+The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file.
+For now you control how logs are used and enable some experimental features:
+
+```json
+{
+  "logs": {
+    "enabled": true,
+    "level": "debug",
+    "strategy": "truncate"
+  },
+  "experimental": {
+    "capture_stdout": false,
+    "capture_stderr": false
   }
 }
 ```
 
-For now you can use the `index.json` to also override the registry of any container image. By default, we pull from `docker.io` if no configuration is found for a given package.
-In the future is planned to split the override configuration from the common index/registry.
+### Package Version Management
 
-### Configuration via config.json
+hbox also creates and maintains a directory `$HBOX_DIR/versions` that keeps track of the current version of each package.
+Every package has a file there and this is under the management of hbox itself and shouldn't be manually edited.
 
-The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file:
-
-```json
-{
-  "debug": false
-}
-```
-
-### Package Version Management via versions.json
-
-hbox also creates and maintains a `$HBOX_DIR/versions.json` file that keeps track of the current version of each package. This file is under the management of hbox itself and shouldn't be manually edited:
+Example of a `$HBOX_DIR/versions/node.json`
 
 ```json
 {
-  "packages": [
-    {
-      "name": "aws",
-      "versions": [
-        "latest"
-      ],
-      "current": "latest"
-    },
-    {
-      "name": "jq",
-      "versions": [
-        "latest",
-        "1.7rc2"
-      ],
-      "current": "1.7rc2"
-    },
-    {
-      "name": "node",
-      "versions": [
-        "latest",
-        "14",
-        "15"
-      ],
-      "current": "15"
-    }
-  ]
+  "name": "node",
+  "versions": [
+    "latest",
+    "14",
+    "15"
+  ],
+  "current": "15"
 }
 ```
+
+### Logs
+
+If you enable logs in you `$HBOX_DIR/config.json` file, your logs will appear in the `$HBOX_DIR/logs` folder.
+Use this to see what commands are executed under the hood that aren't displayed normally for the user.
 
 ## Usage
 
@@ -212,7 +164,26 @@ Below are some examples demonstrating how you can use `hbox`:
 
 ```sh
 > hbox version
-0.1.1
+0.4.0
+> hbox info
+[System Information]
+OS Details:
+  Name           : linux
+  Architecture   : x86_64
+  Family         : unix
+
+[Application Configuration]
+Version          : 0.4.0
+Directories and Files:
+  base dir       : /home/helton/.hbox
+  config file    : /home/helton/.hbox/config.json
+  overrides dir  : /home/helton/.hbox/overrides
+  versions dir   : /home/helton/.hbox/versions
+  logs dir       : /home/helton/.hbox/logs
+  shims dir      : /home/helton/.hbox/shims
+  index dir      : /home/helton/.hbox/index
+Environment Vars:
+  HBOX_DIR       : /home/helton/.hbox
 > hbox list
 > hbox add jq
 latest: Pulling from jqlang/jq
@@ -226,36 +197,40 @@ jq-1.7.1
 > hbox add node latest
 latest: Pulling from library/node
 ...
-Added 'node' version latest.
+Added 'node' version 'latest'. Current version is 'latest'.
 > hbox list
-- jq:
-  - latest ✔
-- node:
-  - latest ✔
+- [jq]
+  - versions
+    - latest ✔
+- [node]
+  - versions
+    - latest ✔
 > hbox list node
-- node:
-  - latest ✔
+- [node]
+  - versions
+    - latest ✔
 > node --version
 v22.0.0
 > hbox add node 14 --set-default
-'node' version 14 set as default.
 14: Pulling from library/node
 ...
-Added 'node' version 14.
+Added 'node' version '14'. Current version is '14'.
 > hbox list node
-- node:
-  - 14 ✔
-  - latest
+- [node]
+  - versions
+    - 14 ✔
+    - latest
 > node --version
 v14.21.3
 > hbox use node latest
-'node' set to version latest
+Package 'node' set to version 'latest'
 > node --version
 v22.0.0
 > hbox list node
-- node:
-  - 14
-  - latest ✔
+- [node]
+  - versions
+    - 14
+    - latest ✔
 ```
 
 These examples should provide a quick start guide for you to understand the basic operations that you can perform with hbox.
