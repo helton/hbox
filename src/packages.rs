@@ -24,7 +24,9 @@ impl Package {
     }
 
     pub fn load(name: &str) -> Result<Option<Self>, Box<dyn Error>> {
-        if let Some(versions_package) = crate::configs::version::VersionConfig::load(name.to_owned())? {
+        if let Some(versions_package) =
+            crate::configs::version::VersionConfig::load(name.to_owned())?
+        {
             let index_package = crate::configs::index::IndexConfig::load(name.to_owned())?;
             let package = Self::make_from(name, index_package, versions_package)?;
             Ok(Some(package))

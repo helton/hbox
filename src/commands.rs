@@ -1,11 +1,11 @@
 use crate::configs::app::AppConfig;
+use crate::configs::version::VersionConfig;
 use crate::packages::Package;
 use crate::runner::run;
 use crate::shims::{add_shim, remove_shim};
 use log::info;
 use std::env;
 use std::error::Error;
-use crate::configs::version::VersionConfig;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
     let config = AppConfig::load();
@@ -19,15 +19,39 @@ pub fn show_info() -> Result<(), Box<dyn Error>> {
     info!("[Application Configuration]");
     info!("Version          : {}", env!("CARGO_PKG_VERSION"));
     info!("Directories and Files:");
-    info!("  base dir       : {}", config.base_dir.to_str().unwrap_or_else(|| ""));
-    info!("  config file    : {}", config.config_file_path().to_str().unwrap_or_else(|| ""));
-    info!("  overrides dir  : {}", config.overrides_path().to_str().unwrap_or_else(|| ""));
-    info!("  versions dir   : {}", config.versions_path().to_str().unwrap_or_else(|| ""));
-    info!("  logs dir       : {}", config.logs_path().to_str().unwrap_or_else(|| ""));
-    info!("  shims dir      : {}", config.shims_path().to_str().unwrap_or_else(|| ""));
-    info!("  index dir      : {}", config.index_path().to_str().unwrap_or_else(|| ""));
+    info!(
+        "  base dir       : {}",
+        config.base_dir.to_str().unwrap_or_else(|| "")
+    );
+    info!(
+        "  config file    : {}",
+        config.config_file_path().to_str().unwrap_or_else(|| "")
+    );
+    info!(
+        "  overrides dir  : {}",
+        config.overrides_path().to_str().unwrap_or_else(|| "")
+    );
+    info!(
+        "  versions dir   : {}",
+        config.versions_path().to_str().unwrap_or_else(|| "")
+    );
+    info!(
+        "  logs dir       : {}",
+        config.logs_path().to_str().unwrap_or_else(|| "")
+    );
+    info!(
+        "  shims dir      : {}",
+        config.shims_path().to_str().unwrap_or_else(|| "")
+    );
+    info!(
+        "  index dir      : {}",
+        config.index_path().to_str().unwrap_or_else(|| "")
+    );
     info!("Environment Vars:");
-    info!("  HBOX_DIR       : {}", config.base_dir.to_str().unwrap_or_else(|| ""));
+    info!(
+        "  HBOX_DIR       : {}",
+        config.base_dir.to_str().unwrap_or_else(|| "")
+    );
     Ok(())
 }
 
