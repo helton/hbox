@@ -65,8 +65,9 @@ fn add_current_directory(package: &Package, args: &mut Vec<String>) {
 fn add_environment_variables(package: &Package, args: &mut Vec<String>) {
     if let Some(environment_variables) = &package.index.environment_variables {
         for env_var in environment_variables {
+            let expanded_value = shellexpand::full(&env_var.value).unwrap_or_default();
             args.push("-e".to_string());
-            args.push(format!("{}={}", env_var.name, env_var.value));
+            args.push(format!("{}={}", env_var.name, expanded_value));
         }
     }
 }
