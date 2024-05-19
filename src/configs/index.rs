@@ -47,6 +47,7 @@ impl IndexConfig {
 pub struct Package {
     pub image: String,
     pub volumes: Option<Vec<Volume>>,
+    pub ports: Option<Vec<Port>>,
     pub current_directory: Option<String>,
     pub environment_variables: Option<Vec<EnvironmentVariable>>,
     pub binaries: Option<Vec<Binary>>,
@@ -59,6 +60,7 @@ impl Package {
         Package {
             image: format!("docker.io/{}", name),
             volumes: None,
+            ports: None,
             current_directory: None,
             environment_variables: None,
             binaries: None,
@@ -71,6 +73,12 @@ impl Package {
 pub struct Volume {
     pub source: String,
     pub target: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Port {
+    pub host: u16,
+    pub container: u16,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

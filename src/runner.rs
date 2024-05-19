@@ -32,6 +32,7 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
     let binary = get_binary(package, &binary);
 
     add_default_flags(package, &mut args);
+    add_ports(package, &mut args);
     add_volumes(package, &mut args);
     add_current_directory(package, &mut args);
     add_environment_variables(package, &mut args);
@@ -89,6 +90,15 @@ fn add_volumes(package: &Package, args: &mut Vec<String>) {
             } else {
                 warn!("Volume source '{}' not found. Skipping.", source);
             }
+        }
+    }
+}
+
+fn add_ports(package: &Package, args: &mut Vec<String>) {
+    if let Some(ports) = &package.index.ports {
+        for port in ports {
+            args.push("-p".to_string());
+            args.push(format!("{}:{}", &port.host, port.container));
         }
     }
 }

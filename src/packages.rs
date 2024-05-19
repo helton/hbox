@@ -66,6 +66,12 @@ impl Package {
         info!("- [{}]", self.name);
         if verbose {
             info!("  - image: {}", self.index.image);
+            if let Some(ports) = &self.index.ports {
+                info!("  - volumes:");
+                for port in ports {
+                    info!("    - {}:{}", port.host, port.container);
+                }
+            }
             if let Some(volumes) = &self.index.volumes {
                 info!("  - volumes:");
                 for volume in volumes {
