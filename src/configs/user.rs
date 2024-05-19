@@ -32,7 +32,7 @@ pub struct Root {
 #[serde(rename_all = "lowercase")]
 pub enum Engine {
     Docker,
-    Podman
+    Podman,
 }
 
 impl Default for Engine {

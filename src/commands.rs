@@ -1,4 +1,5 @@
 use crate::configs::app::AppConfig;
+use crate::configs::user::UserConfig;
 use crate::configs::version::VersionConfig;
 use crate::packages::Package;
 use crate::runner::run;
@@ -6,7 +7,6 @@ use crate::shims::{add_shim, remove_shim};
 use log::info;
 use std::env;
 use std::error::Error;
-use crate::configs::user::UserConfig;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
     let config = AppConfig::load();
