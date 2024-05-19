@@ -24,6 +24,8 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
     let mut args = vec!["run".to_string(), "--rm".to_string()];
     if interactive {
         args.push("-i".to_string());
+    } else {
+        args.push("-it".to_string());
     }
 
     add_volumes(package, &mut args);
@@ -85,39 +87,53 @@ fn add_binary_entrypoint(package: &Package, binary: &Option<String>, args: &mut 
     }
 }
 
-fn get_stdio(config: &crate::configs::user::Root) -> (Stdio, Stdio) {
+fn get_stdio(config: &crate::configs::user::Root, stdin_buffer: &Option<Vec<u8>>) -> (Stdio, Stdio, Stdio) {
+    let stdin = if let Some(b) = stdin_buffer {
+        if b.is_empty() {
+            Stdio::inherit()
+        } else {
+            Stdio::piped()
+        }
+    } else {
+        Stdio::inherit()
+    };
+
     let stdout = if config.experimental.capture_stdout {
         Stdio::piped()
     } else {
         Stdio::inherit()
     };
+
     let stderr = if config.experimental.capture_stderr {
         Stdio::piped()
     } else {
         Stdio::inherit()
     };
-    (stdout, stderr)
+
+    (stdin, stdout, stderr)
 }
 
 fn run_command_with_args(command: &str, args: &[String], stdin_buffer: Option<Vec<u8>>) -> bool {
-    debug!("Running command: {} {:?}", command, args);
+    debug!("Running command: {} {}", command, args.join(" "));
 
     let config = UserConfig::load().unwrap_or_default();
-    let (stdout, stderr) = get_stdio(&config);
+    let (stdin, stdout, stderr) = get_stdio(&config, &stdin_buffer);
 
     let mut child = Command::new(command)
         .args(args)
         .stdout(stdout)
         .stderr(stderr)
-        .stdin(Stdio::piped())
+        .stdin(stdin)
         .spawn()
         .expect("Failed to spawn command");
 
     if let Some(buffer) = stdin_buffer {
-        let child_stdin = child.stdin.as_mut().expect("Failed to open stdin");
-        child_stdin
-            .write_all(&buffer)
-            .expect("Failed to write to stdin");
+        if buffer.len() > 0 {
+            let child_stdin = child.stdin.as_mut().expect("Failed to open stdin");
+            child_stdin
+                .write_all(&buffer)
+                .expect("Failed to write to stdin");
+        }
     }
 
     let stdout_thread = spawn_log_thread(
