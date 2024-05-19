@@ -5,6 +5,8 @@ use std::io::{stdin, BufRead, BufReader, IsTerminal, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
+use rand::{thread_rng, Rng};
+use rand::distributions::Alphanumeric;
 
 pub fn pull(package: &Package) -> bool {
     let image = format!("{}:{}", package.index.image, package.versions.current);
@@ -21,7 +23,7 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
             .expect("Failed to read stdin");
     }
 
-    let mut args = vec!["run".to_string(), "--rm".to_string()];
+    let mut args = vec!["run".to_string(), "--rm".to_string(), "--name".to_string(), generate_random_name(&package)];
     if interactive {
         args.push("-i".to_string());
     } else {
@@ -41,6 +43,11 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
     args.extend(params.iter().cloned());
 
     run_command_with_args("docker", &args, Some(buffer))
+}
+
+fn generate_random_name(package: &Package) -> String {
+    let id: String = thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
+    format!("hbox-{}-{}-{}", package.name, package.versions.current, id)
 }
 
 fn add_volumes(package: &Package, args: &mut Vec<String>) {
