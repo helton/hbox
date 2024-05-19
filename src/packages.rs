@@ -67,7 +67,7 @@ impl Package {
         if verbose {
             info!("  - image: {}", self.index.image);
             if let Some(ports) = &self.index.ports {
-                info!("  - volumes:");
+                info!("  - ports:");
                 for port in ports {
                     info!("    - {}:{}", port.host, port.container);
                 }
