@@ -36,6 +36,11 @@ impl Package {
     pub fn load_all() -> Result<Vec<Self>, Box<dyn Error>> {
         let mut packages: Vec<Self> = Vec::new();
         let config = AppConfig::load();
+
+        if !config.versions_path().exists() {
+            fs::create_dir_all(config.versions_path())?;
+        }
+
         for entry in fs::read_dir(config.versions_path())? {
             let entry = entry?;
             let path = entry.path();
