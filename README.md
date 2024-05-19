@@ -17,7 +17,8 @@ hbox offers the following features:
 - **Support for Pipes**: Supports the use of pipes in `hbox run`, enabling efficient command chaining.
 - **Convenient Shims**: Creates `shims` (alias shortcuts) for all installed packages, simplifying command entry from `hbox run <package alias> <commands>` to `<package alias> <commands>`.
 - **Accessible Internal Binaries**: Provides direct access to internal binaries within images. Users can override the default entrypoint to access essential tools and utilities within containers directly.
-- **Customizable Environment Variables**: Allows setting environment variables for each package, enabling finer control over runtime configurations.
+- **Customizable Environment Variables**: Allows setting environment variables for each package, enabling finer control over runtime configurations.]()
+- **Support for Docker and Podman**: Provides seamless support for both Docker and Podman container engines, offering flexibility in container runtime choices.
 
 ## Installation
 
@@ -139,9 +140,64 @@ These examples should provide a quick start guide for you to understand the basi
 
 ## Configuration
 
+### Configuration via config.json
+
+The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file. Currently, you can control the container engine, how logs are used and enable some experimental features:
+
+```json
+{
+  "engine": "docker",
+  "logs": {
+    "enabled": true,
+    "level": "debug",
+    "strategy": "truncate"
+  },
+  "experimental": {
+    "capture_stdout": false,
+    "capture_stderr": false
+  }
+}
+```
+
+#### Properties
+
+The `config.json` file is used to control how hbox should behave. Below are the details of each property available in this configuration file.
+
+| Property                      | Type      | Description                                                                                                                                           |
+|-------------------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `engine`                      | `string`  | Indicates what container engine to use. Possible values: `docker`, `podman`. Example: `docker`                                                        |
+| `logs`                        | `object`  | Configuration for logging behavior.                                                                                                                   |
+| `logs.enabled`                | `boolean` | Indicates if logging is enabled. Example: `true`                                                                                                      |
+| `logs.level`                  | `string`  | Specifies the logging level. Possible values: `debug`, `info`, `warn`, `error`. Example: `debug`                                                      |
+| `logs.strategy`               | `string`  | Strategy for handling log files. Possible values: `append`, `truncate`. Example: `truncate`                                                           |
+| `experimental`                | `object`  | Configuration for experimental features.                                                                                                              |
+| `experimental.capture_stdout` | `boolean` | Indicates if standard output should be captured and sent to logs. Regardless of this option, stdout will always be printed normally. Example: `false` |
+| `experimental.capture_stderr` | `boolean` | Indicates if standard error should be captured and sent to logs. Regardless of this option, stderr will always be printed normally. Example: `false`  |
+
+#### Property Details
+
+- **engine**: Specifies whether to use `docker` or `podman` as a container engine. `docker` is the default.
+
+- **logs**: This object configures logging behavior for hbox.
+    - `enabled`: A boolean indicating if logging is enabled. If set to `true`, logging is active.
+    - `level`: Specifies the verbosity of the logs. Options include:
+        - `debug`: Detailed information typically useful for developers.
+        - `info`: General information about the application's operation.
+        - `warn`: Warnings about potentially problematic situations.
+        - `error`: Error messages indicating serious issues.
+    - `strategy`: Determines how log files are managed. Options include:
+        - `append`: Adds new log entries to the end of existing log files.
+        - `truncate`: Overwrites existing log files with new entries.
+
+- **experimental**: This object contains settings for experimental features that are not yet fully supported.
+    - `capture_stdout`: A boolean indicating if the standard output of commands should be captured and sent to logs. Regardless of this option, stdout will always be printed normally.
+    - `capture_stderr`: A boolean indicating if the standard error of commands should be captured and sent to logs. Regardless of this option, stderr will always be printed normally.
+
+These properties allow you to customize the behavior of hbox, particularly how it handles logging and experimental features, providing better control over the application's operation.
+
 ### Shims
 
-hbox utilizes shims and a configuration file to effectively manage your installed packages. There are two types of shims: _package shims_ and _binary shims_.
+hbox utilizes shims to effectively manage your installed packages. There are two types of shims: _package shims_ and _binary shims_.
 
 #### Package Shims
 
@@ -306,57 +362,6 @@ We also set `-c` as the default command and specified that all arguments should 
 ```sh
 docker run -it --rm --name hbox-busybox-latest-qNDyEVzrUb -v .:/app -w /app -e HTTP_PROXY=$HTTP_PROXY -e HTTPS_PROXY=$HTTPS_PROXY -e NO_PROXY=$NO_PROXY --entrypoint /bin/sh docker.io/busybox:latest -c "ls -alh"
 ```
-
-### Configuration via config.json
-
-The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file. Currently, you can control how logs are used and enable some experimental features:
-
-```json
-{
-  "logs": {
-    "enabled": true,
-    "level": "debug",
-    "strategy": "truncate"
-  },
-  "experimental": {
-    "capture_stdout": false,
-    "capture_stderr": false
-  }
-}
-```
-
-#### Properties
-
-The `config.json` file is used to control how hbox should behave. Below are the details of each property available in this configuration file.
-
-| Property                      | Type      | Description                                                                                                                                           |
-|-------------------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `logs`                        | `object`  | Configuration for logging behavior.                                                                                                                   |
-| `logs.enabled`                | `boolean` | Indicates if logging is enabled. Example: `true`                                                                                                      |
-| `logs.level`                  | `string`  | Specifies the logging level. Possible values: `debug`, `info`, `warn`, `error`. Example: `debug`                                                      |
-| `logs.strategy`               | `string`  | Strategy for handling log files. Possible values: `append`, `truncate`. Example: `truncate`                                                           |
-| `experimental`                | `object`  | Configuration for experimental features.                                                                                                              |
-| `experimental.capture_stdout` | `boolean` | Indicates if standard output should be captured and sent to logs. Regardless of this option, stdout will always be printed normally. Example: `false` |
-| `experimental.capture_stderr` | `boolean` | Indicates if standard error should be captured and sent to logs. Regardless of this option, stderr will always be printed normally. Example: `false`  |
-
-#### Property Details
-
-- **logs**: This object configures logging behavior for hbox.
-    - `enabled`: A boolean indicating if logging is enabled. If set to `true`, logging is active.
-    - `level`: Specifies the verbosity of the logs. Options include:
-        - `debug`: Detailed information typically useful for developers.
-        - `info`: General information about the application's operation.
-        - `warn`: Warnings about potentially problematic situations.
-        - `error`: Error messages indicating serious issues.
-    - `strategy`: Determines how log files are managed. Options include:
-        - `append`: Adds new log entries to the end of existing log files.
-        - `truncate`: Overwrites existing log files with new entries.
-
-- **experimental**: This object contains settings for experimental features that are not yet fully supported.
-    - `capture_stdout`: A boolean indicating if the standard output of commands should be captured and sent to logs. Regardless of this option, stdout will always be printed normally.
-    - `capture_stderr`: A boolean indicating if the standard error of commands should be captured and sent to logs. Regardless of this option, stderr will always be printed normally.
-
-These properties allow you to customize the behavior of hbox, particularly how it handles logging and experimental features, providing better control over the application's operation.
 
 ### Package Version Management
 

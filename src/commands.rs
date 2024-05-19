@@ -6,9 +6,11 @@ use crate::shims::{add_shim, remove_shim};
 use log::info;
 use std::env;
 use std::error::Error;
+use crate::configs::user::UserConfig;
 
 pub fn show_info() -> Result<(), Box<dyn Error>> {
     let config = AppConfig::load();
+    let user_config = UserConfig::load().unwrap_or_default();
     info!("");
     info!("[System Information]");
     info!("OS Details:");
@@ -18,6 +20,7 @@ pub fn show_info() -> Result<(), Box<dyn Error>> {
     info!("");
     info!("[Application Configuration]");
     info!("Version          : {}", env!("CARGO_PKG_VERSION"));
+    info!("Engine           : {}", user_config.engine.as_str());
     info!("Directories and Files:");
     info!(
         "  base dir       : {}",

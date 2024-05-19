@@ -3,7 +3,6 @@
 List of ideas I want to implement in the future.
 
 - Miscellaneous:
-  - Support `podman`
   - Support private registries and mirrors
    - maybe via registry mapping in `config.json`?
   - Add a .gif showcasing hbox

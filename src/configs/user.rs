@@ -23,8 +23,31 @@ impl UserConfig {
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Root {
+    pub engine: Engine,
     pub logs: Logs,
     pub experimental: Experimental,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum Engine {
+    Docker,
+    Podman
+}
+
+impl Default for Engine {
+    fn default() -> Self {
+        Self::Docker
+    }
+}
+
+impl Engine {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Docker => "docker",
+            Self::Podman => "podman",
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

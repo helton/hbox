@@ -9,11 +9,14 @@ use std::process::{Command, Stdio};
 use std::thread;
 
 pub fn pull(package: &Package) -> bool {
+    let config = UserConfig::load().unwrap_or_default();
     let image = format!("{}:{}", package.index.image, package.versions.current);
-    run_command_with_args("docker", &["pull".to_string(), image], None)
+    run_command_with_args(config.engine.as_str(), &["pull".to_string(), image], None)
 }
 
 pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> bool {
+    let config = UserConfig::load().unwrap_or_default();
+
     let interactive = !stdin().is_terminal();
     let mut buffer = Vec::new();
     if interactive {
@@ -51,7 +54,7 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
         args.extend(params.iter().cloned());
     }
 
-    run_command_with_args("docker", &args, Some(buffer))
+    run_command_with_args(config.engine.as_str(), &args, Some(buffer))
 }
 
 fn should_wrap_args(binary: Option<&Binary>) -> bool {
