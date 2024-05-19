@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/helton/hbox/compare/v0.5.0...v0.6.0) (2024-05-19)
+
+
+### Features
+
+* add command hbox config ([86c10e0](https://github.com/helton/hbox/commit/86c10e052e0953e89d9b4be55fbb93daf397775e))
+* add support to Podman as container engine ([2f0f5b2](https://github.com/helton/hbox/commit/2f0f5b2a3bb9c818134f3f4215ccda2ab9debcc3))
+* add support to ports mapping ([cb8eef7](https://github.com/helton/hbox/commit/cb8eef7969225ae042febe45becf08aaabb7ace1))
+
 ## [0.5.0](https://github.com/helton/hbox/compare/v0.4.0...v0.5.0) (2024-05-19)
 
 
