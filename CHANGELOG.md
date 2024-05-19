@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/helton/hbox/compare/v0.6.0...v0.6.1) (2024-05-19)
+
+
+### Bug Fixes
+
+* update ports in list command ([246ed50](https://github.com/helton/hbox/commit/246ed509600cdf1407b460c09a86af0394362776))
+
 ## [0.6.0](https://github.com/helton/hbox/compare/v0.5.0...v0.6.0) (2024-05-19)
 
 
