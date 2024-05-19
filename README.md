@@ -12,12 +12,12 @@ hbox is a Command Line Interface (CLI) that leverages container technology to ma
 
 hbox offers the following features:
 
-- **Container Isolation**: hbox uses containers to isolate packages, allowing multiple versions of a package to coexist without conflict.
-- **Robust Configuration Options**: hbox enables high customization through configuration files. You can define package aliases and setup automatic volume mounts via `config.json`.
-- **Support for Pipes**: hbox supports the use of pipes in `hbox run`, which allows you to chain commands efficiently.
-- **Convenient Shims**: hbox creates `shims` (alias shortcuts) for all installed packages, simplifying command entry from `hbox run <package alias> <commands>` to `<package alias> <commands>`.
-- **Accessible Internal Binaries**: hbox has the ability to provide direct access to internal binaries within images. Users can override the default entrypoint, meaning essential tools and utilities within containers can be accessed directly. This feature further expands the capabilities of hbox `shims`, making it even more convenient to launch and utilize container tools.
-- **Customizable Environment Variables**: hbox supports setting environment variables for each package, enabling finer control over runtime configurations.
+- **Container Isolation**: Uses containers to isolate packages, allowing multiple versions to coexist without conflict.
+- **Robust Configuration Options**: Enables high customization through configuration files, allowing you to define package aliases and set up automatic volume mounts via `config.json`.
+- **Support for Pipes**: Supports the use of pipes in `hbox run`, enabling efficient command chaining.
+- **Convenient Shims**: Creates `shims` (alias shortcuts) for all installed packages, simplifying command entry from `hbox run <package alias> <commands>` to `<package alias> <commands>`.
+- **Accessible Internal Binaries**: Provides direct access to internal binaries within images. Users can override the default entrypoint to access essential tools and utilities within containers directly.
+- **Customizable Environment Variables**: Allows setting environment variables for each package, enabling finer control over runtime configurations.
 
 ## Commands
 
@@ -53,20 +53,59 @@ cargo install hbox
 
 ### Shims and Shell Configuration
 
-hbox utilizes shims and a configuration file to effectively manage your installed packages. For the successful addition of `$HBOX_DIR/shims` at the correct priority level to your path, these lines of code should be added to your `.bashrc` or `.zshrc` file:
+hbox utilizes shims and a configuration file to effectively manage your installed packages. To ensure the `$HBOX_DIR/shims` is added at the correct priority level to your path, add these lines to your `.bashrc` or `.zshrc` file:
 
 ```sh
 export HBOX_DIR="$HOME/.hbox"
 export PATH="$HBOX_DIR/shims":$PATH
 ```
 
-If you installed hbox via `cargo` the `hbox` binary should already be available on your `PATH` env var when the shims are executed.
+If you installed hbox via `cargo`, the `hbox` binary should already be available in your `PATH` environment variable when the shims are executed.
+
+## Configuration
 
 ### Package Registry/Index
 
-The registry/index of packages in hbox is managed in the `$HBOX_DIR/index` directory.
-Inside there a sharded structure where every package as an individual file is intended to keep information about usual package configuration.
-In the future this will be centralized in on its own repo/server, so you can fetch it on demand.
+The registry/index of packages in hbox is managed in the `$HBOX_DIR/index` directory. This directory has a sharded structure where each package has an individual file to store configuration information. In the future, this will be centralized in its own repository/server, allowing you to fetch it on demand.
+
+#### Properties
+
+The configuration below is for index (`$HBOX_DIR/index/<shard>/<package>.json`) and override (`$HBOX_DIR/overrides/<package>.json`) files:
+
+| Property               | Type        | Description                                                                                  |
+|------------------------|-------------|----------------------------------------------------------------------------------------------|
+| `image`                | `string`    | The Docker image to be used for the package. Example: `"docker.io/busybox"`                  |
+| `volumes`              | `array`     | An array of volume mappings for the container. Each volume mapping has a `source` and `target`. Example: `[{"source": ".", "target": "/app"}]` |
+| `current_directory`    | `string`    | The working directory inside the container. Example: `"/app"`                                |
+| `binaries`             | `array`     | An array of binaries available in the container. Each binary has a `name`, `path`, and optional `cmd` and `wrap_args`. Example: `[{"name": "tree", "path": "/bin/tree"}, {"name": "mysh", "path": "/bin/sh", "cmd": ["-c"], "wrap_args": true}]` |
+| `only_shim_binaries`   | `boolean`   | Indicates if only shim binaries should be used. Example: `true`                              |
+| `environment_variables`| `array`     | An array of environment variables to be set in the container. Each variable has a `name` and `value`. Example: `[{"name": "foo", "value": "$foo"}, {"name": "bar", "value": "$bar"}]` |
+
+#### Property Details
+
+- **image**: Specifies the Docker image to be used. This is a required property for defining the container image from which the package will be run.
+
+- **volumes**: Defines the volume mappings between the host and the container. Each volume mapping includes:
+    - `source`: The path on the host machine.
+    - `target`: The path inside the container.
+
+- **current_directory**: Sets the working directory inside the container. This is where commands will be executed by default.
+
+- **binaries**: Lists the binaries available within the container. Each binary includes:
+    - `name`: The name of the binary.
+    - `path`: The path to the binary inside the container.
+    - `cmd` (optional): An array of default command arguments.
+    - `wrap_args` (optional): A boolean indicating if the arguments should be wrapped in quotes.
+
+- **only_shim_binaries**: A boolean value that, when set to true, indicates that only shim binaries should be used.
+
+- **environment_variables**: Specifies environment variables to be set in the container. Each variable includes:
+    - `name`: The name of the environment variable.
+    - `value`: The value of the environment variable, which can reference host environment variables.
+
+These properties allow you to customize how each package is run within its container, providing flexibility and control over the runtime environment.
+
+#### Example
 
 Example of a `$HBOX_DIR/index/g/golang.json`:
 
@@ -76,29 +115,31 @@ Example of a `$HBOX_DIR/index/g/golang.json`:
   "volumes": [
     {
       "source": ".",
-      "target": "//app"
+      "target": "/app"
     }
   ],
-  "current_directory": "//app",
+  "current_directory": "/app",
   "binaries": [
     {
       "name": "go",
-      "path": "//usr/local/go/bin/go"
+      "path": "/usr/local/go/bin/go"
     },
     {
       "name": "gofmt",
-      "path": "//usr/local/go/bin/gofmt"
+      "path": "/usr/local/go/bin/gofmt"
     }
   ],
   "only_shim_binaries": true
 }
 ```
 
-### Override configurations
+### Override Configurations
 
-If you want to override configurations of a package, don't change the `$HBOX_DIR/index` folder, but create an override file inside `$HBOX_DIR/overrides`.
-This directory is not sharded, so you can just place your `<package>.json` files there.
-As the name implies, the override configuration will take precedence over the index ones. The files contents won't be merged in memory.
+To override package configurations, create an override file inside `$HBOX_DIR/overrides` instead of modifying the `$HBOX_DIR/index` folder. This directory is not sharded, so you can directly place your `<package>.json` files there. The override configurations will take precedence over the index configurations, and the contents will not be merged in memory.
+
+For the properties of the override configuration, check [Package Registry/Index](README.md/#package-registryindex).
+
+#### Example
 
 Example of a `$HBOX_DIR/overrides/busybox.json`:
 
@@ -142,24 +183,21 @@ Example of a `$HBOX_DIR/overrides/busybox.json`:
 }
 ```
 
-In the example above, we defined a `mysh` as a binary pointing to `/bin/sh` inside the `busybox` image.
-Now we can use it like this:
+In the example above, we define `mysh` as a binary pointing to `/bin/sh` inside the `busybox` image. You can use it like this:
 
 ```sh
 > mysh ls -alh
 ```
 
-Also note that we defined `-c` as the default command, and we also defined that all args should be wrapped in quotes.
-Under the hood the full command executed will be like this:
+We also set `-c` as the default command and specified that all arguments should be wrapped in quotes. The full command executed will be:
 
 ```sh
-docker run -it --rm --name hbox-busybox-latest-qNDyEVzrUb -v .://app -w //app -e HTTP_PROXY=$HTTP_PROXY -e HTTPS_PROXY=$HTTPS_PROXY -e NO_PROXY=$NO_PROXY --entrypoint //bin/sh docker.io/busybox:latest -c "ls -alh"
+docker run -it --rm --name hbox-busybox-latest-qNDyEVzrUb -v .:/app -w /app -e HTTP_PROXY=$HTTP_PROXY -e HTTPS_PROXY=$HTTPS_PROXY -e NO_PROXY=$NO_PROXY --entrypoint /bin/sh docker.io/busybox:latest -c "ls -alh"
 ```
 
 ### Configuration via config.json
 
-The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file.
-For now you control how logs are used and enable some experimental features:
+The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file. Currently, you can control how logs are used and enable some experimental features:
 
 ```json
 {
@@ -175,12 +213,64 @@ For now you control how logs are used and enable some experimental features:
 }
 ```
 
+#### Properties
+
+The `config.json` file is used to control how hbox should behave. Below are the details of each property available in this configuration file.
+
+| Property             | Type      | Description                                                                                   |
+|----------------------|-----------|-----------------------------------------------------------------------------------------------|
+| `logs`               | `object`  | Configuration for logging behavior.                                                           |
+| `logs.enabled`       | `boolean` | Indicates if logging is enabled. Example: `true`                                              |
+| `logs.level`         | `string`  | Specifies the logging level. Possible values: `debug`, `info`, `warn`, `error`. Example: `debug` |
+| `logs.strategy`      | `string`  | Strategy for handling log files. Possible values: `append`, `truncate`. Example: `truncate`   |
+| `experimental`       | `object`  | Configuration for experimental features.                                                      |
+| `experimental.capture_stdout` | `boolean` | Indicates if standard output should be captured. Example: `false`                         |
+| `experimental.capture_stderr` | `boolean` | Indicates if standard error should be captured. Example: `false`                          |
+
+#### Property Details
+
+- **logs**: This object configures logging behavior for hbox.
+    - `enabled`: A boolean indicating if logging is enabled. If set to `true`, logging is active.
+    - `level`: Specifies the verbosity of the logs. Options include:
+        - `debug`: Detailed information typically useful for developers.
+        - `info`: General information about the application's operation.
+        - `warn`: Warnings about potentially problematic situations.
+        - `error`: Error messages indicating serious issues.
+    - `strategy`: Determines how log files are managed. Options include:
+        - `append`: Adds new log entries to the end of existing log files.
+        - `truncate`: Overwrites existing log files with new entries.
+
+- **experimental**: This object contains settings for experimental features that are not yet fully supported.
+    - `capture_stdout`: A boolean indicating if the standard output of commands should be captured.
+    - `capture_stderr`: A boolean indicating if the standard error of commands should be captured.
+
+These properties allow you to customize the behavior of hbox, particularly how it handles logging and experimental features, providing better control over the application's operation.
+
 ### Package Version Management
 
-hbox also creates and maintains a directory `$HBOX_DIR/versions` that keeps track of the current version of each package.
-Every package has a file there and this is under the management of hbox itself and shouldn't be manually edited.
+hbox maintains a directory `$HBOX_DIR/versions` that tracks the current version of each package. Each package has a file in this directory, managed by hbox, and should not be manually edited.
 
-Example of a `$HBOX_DIR/versions/node.json`
+#### Properties
+
+Each package installed with hbox has a version file located in the `$HBOX_DIR/versions` directory. These files are named `<package>.json` and track all versions of the package that are installed. Below are the details of each property available in a version file.
+
+| Property   | Type     | Description                                                             |
+|------------|----------|-------------------------------------------------------------------------|
+| `name`     | `string` | The name of the package. Example: `"node"`                              |
+| `versions` | `array`  | An array of versions of the package that are installed. Example: `["latest", "14", "15"]` |
+| `current`  | `string` | The version of the package that is currently set as active. Example: `"15"` |
+
+#### Property Details
+
+- **name**: The name of the package. This is a required property and uniquely identifies the package.
+
+- **versions**: An array listing all versions of the package that are installed. Each entry in the array is a string representing a version.
+
+- **current**: The version of the package that is currently active. This is the version that will be used when the package is executed.
+
+#### Example
+
+Example of a version file for the `node` package:
 
 ```json
 {
@@ -194,12 +284,13 @@ Example of a `$HBOX_DIR/versions/node.json`
 }
 ```
 
+This example indicates that the `node` package has three versions installed (`latest`, `14`, and `15`), with version `15` currently set as the active version.
+
 ### Logs
 
-If you enable logs in you `$HBOX_DIR/config.json` file, your logs will appear in the `$HBOX_DIR/logs` folder.
-Use this to see what commands are executed under the hood that aren't displayed normally for the user.
+If you enable logs in your `$HBOX_DIR/config.json` file, they will appear in the `$HBOX_DIR/logs` folder. Use this to see what commands are executed under the hood that aren't normally displayed to the user.
 
-**Note**: Be extra careful when sharing your logs, they may contain information you might not want to share, like api keys, environment variables, etc.
+**Note**: Be careful when sharing your logs, as they may contain sensitive information such as API keys and environment variables.
 
 ## Usage
 
@@ -277,5 +368,7 @@ v22.0.0
 ```
 
 These examples should provide a quick start guide for you to understand the basic operations that you can perform with hbox.
+
+## Next steps
 
 If you want to see my ideas for the future of the project, check out the [ROADMAP](ROADMAP.md).
