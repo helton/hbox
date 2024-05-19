@@ -77,6 +77,9 @@ pub struct Volume {
 pub struct Binary {
     pub name: String,
     pub path: String,
+    pub cmd: Option<Vec<String>>,
+    #[serde(default)]
+    pub wrap_args: bool
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

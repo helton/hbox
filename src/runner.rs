@@ -7,6 +7,7 @@ use std::process::{Command, Stdio};
 use std::thread;
 use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
+use crate::configs::index::Binary;
 
 pub fn pull(package: &Package) -> bool {
     let image = format!("{}:{}", package.index.image, package.versions.current);
@@ -23,31 +24,55 @@ pub fn run(package: &Package, binary: Option<String>, params: &Vec<String>) -> b
             .expect("Failed to read stdin");
     }
 
-    let mut args = vec!["run".to_string(), "--rm".to_string(), "--name".to_string(), generate_random_name(&package)];
+    let mut args = vec!["run".to_string()];
     if interactive {
         args.push("-i".to_string());
     } else {
         args.push("-it".to_string());
     }
 
+    let binary = get_binary(package, &binary);
+
+    add_default_flags(package, &mut args);
     add_volumes(package, &mut args);
     add_current_directory(package, &mut args);
     add_environment_variables(package, &mut args);
-    add_binary_entrypoint(package, &binary, &mut args);
+    add_binary_entrypoint(binary, &mut args);
+    add_container_image(package, &mut args);
+    add_binary_cmd(binary, &mut args);
 
-    args.push(format!(
-        "{}:{}",
-        package.index.image.clone(),
-        package.versions.current
-    ));
-    args.extend(params.iter().cloned());
+    if should_wrap_args(binary) {
+        debug!("Wrapping params in quotes");
+        let escaped_params: Vec<String> = params.iter().map(|param| param.replace("\"", "\\\"")).collect();
+        args.push(escaped_params.join(" "));
+    } else {
+        args.extend(params.iter().cloned());
+    }
 
     run_command_with_args("docker", &args, Some(buffer))
+}
+
+fn should_wrap_args(binary: Option<&Binary>) -> bool {
+    binary.map_or(false, |bin| bin.wrap_args)
 }
 
 fn generate_random_name(package: &Package) -> String {
     let id: String = thread_rng().sample_iter(&Alphanumeric).take(10).map(char::from).collect();
     format!("hbox-{}-{}-{}", package.name, package.versions.current, id)
+}
+
+fn add_default_flags(package: &Package, args: &mut Vec<String>) {
+    args.push("--rm".to_string());
+    args.push("--name".to_string());
+    args.push(generate_random_name(&package))
+}
+
+fn add_container_image(package: &Package, args: &mut Vec<String>) {
+    args.push(format!(
+        "{}:{}",
+        package.index.image.clone(),
+        package.versions.current
+    ));
 }
 
 fn add_volumes(package: &Package, args: &mut Vec<String>) {
@@ -81,17 +106,32 @@ fn add_environment_variables(package: &Package, args: &mut Vec<String>) {
     }
 }
 
-fn add_binary_entrypoint(package: &Package, binary: &Option<String>, args: &mut Vec<String>) {
+fn add_binary_entrypoint(binary: Option<&Binary>, args: &mut Vec<String>) {
+    if let Some(binary) = binary {
+        args.push("--entrypoint".to_string());
+        args.push(binary.path.to_string());
+    }
+}
+
+fn add_binary_cmd(binary: Option<&Binary>, args: &mut Vec<String>) {
+    if let Some(binary) = binary {
+        if let Some(cmd) = &binary.cmd {
+            args.extend(cmd.iter().cloned());
+        }
+    }
+}
+
+fn get_binary<'a>(package: &'a Package, binary: &Option<String>) -> Option<&'a Binary> {
     if let Some(b) = binary {
         if let Some(binaries) = &package.index.binaries {
             for binary in binaries {
                 if binary.name == *b {
-                    args.push("--entrypoint".to_string());
-                    args.push(binary.path.to_string());
+                    return Some(binary)
                 }
             }
         }
     }
+    None
 }
 
 fn get_stdio(config: &crate::configs::user::Root, stdin_buffer: &Option<Vec<u8>>) -> (Stdio, Stdio, Stdio) {
