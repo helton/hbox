@@ -158,6 +158,8 @@ Example of a `$HBOX_DIR/versions/node.json`
 If you enable logs in you `$HBOX_DIR/config.json` file, your logs will appear in the `$HBOX_DIR/logs` folder.
 Use this to see what commands are executed under the hood that aren't displayed normally for the user.
 
+**Note**: Be extra careful when sharing your logs, they may contain information you might not want to share, like api keys, environment variables, etc.
+
 ## Usage
 
 Below are some examples demonstrating how you can use `hbox`:

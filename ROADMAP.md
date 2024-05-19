@@ -6,24 +6,33 @@ List of ideas I want to implement in the future.
   - Support `podman`
   - Support private registries and mirrors
    - maybe via registry mapping in `config.json`?
+  - Add a .gif showcasing hbox
+  - Update GitHub workflows to
+    - upload binaries to release
+    - add linters and code format
+    - add static analysis
+    - add image scanning
   - Create an index/registry repository
-   - Use shards to get better performance in git repositories
-     - References:
-       - https://github.com/Homebrew/homebrew-core
-       - https://github.com/Homebrew/homebrew-cask
-       - https://github.com/opentofu/opentofu/issues/741#issuecomment-1777544250
-   - Double check if registered packages are available locally before using them
-   - Expand env variables when passing them to the container
-   - Manage volumes to avoid lose data
-   - Make it easier to build custom images based on templates
-     - pass relevant build args, like IMAGE_NAME and IMAGE_VERSION
-   - Allow force flags in docker run, based on pattern matching
-     - useful for REPL commands
-   - Try to update config files from `.json` to `.yaml` or `.toml`
-   - Make sure we create all folders and files it they don't exist
-   - Write debug output into log files
-   - Check if there are unnecessary Ok() wrappers
+  - Use shards to get better performance in git repositories
+    - References:
+      - https://github.com/Homebrew/homebrew-core
+      - https://github.com/Homebrew/homebrew-cask
+      - https://github.com/opentofu/opentofu/issues/741#issuecomment-1777544250
+  - Double check if registered packages are available locally before using them
+  - Manage volumes to avoid lose data
+    - probably better to manage them by package + version 
+  - Make it easier to build custom images based on templates
+    - pass relevant build args, like IMAGE_NAME and IMAGE_VERSION
+  - Try to update config files from `.json` to `.yaml` or `.toml`
+  - Mask relevant information added to logs
+  - Allow override configs and versions in a local folder, via `.hbox` file (or other file extension)
+    - Traverse parent directories until a `.hbox` config file is found
+      - does it need to define depth level?
+  - Add version to config files to specify their formats to allow check for future compatibility
+  - [Experimental] Allow forced flags in docker run, based on pattern matching
 - New commands
+  - Add `hbox config` to support all `config.json` options
+    - example: `hbox config logs.enabled true`
   - Add auto update `hbox upgrade`
   - Add `hbox update` to update index
   - Add `hbox register` to register a package, even with custom image
@@ -33,9 +42,11 @@ List of ideas I want to implement in the future.
   - Add command `hbox reshim` to regenerate shims
   - *Experimental*: Identify paths in `hbox run` to map them via container volumes automatically
 - Updated commands:
-  - Allow `hbox config` to support all `config.json` options
   - Add option to keep containers instead of using `--rm`
     - maybe adding custom tags to them to identify them easily?
+    - define lifecycle rules:
+      - should we reuse them or always create a new one?
+      - should volumes be reused between them?
   - Add option to remove images when removing packages via `hbox remove/uninstall`
   - Add support to colors in `hbox run` output when possible (*nix only?)
   - On `hbox add/install` add warn when a shim will conflict with an existing command
