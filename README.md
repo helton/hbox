@@ -48,12 +48,13 @@ CLI tool that leverages container technology to manage packages.
 Usage: hbox <COMMAND>
 
 Commands:
-  info    Print debug information
+  info    Print debug information about the hbox environment and configuration
   list    List all installed packages and their versions
-  add     Add a specific version of a package
-  remove  Remove a package
-  use     Set current version of a package
-  run     Run the package
+  add     Add and install a specific version of a package
+  remove  Remove a specific version of a package
+  use     Set the current version of a package as the default
+  run     Run a command from a package
+  config  Configure hbox settings
   help    Print this message or the help of the given subcommand(s)
 
 Options:
@@ -67,7 +68,7 @@ Below are some examples demonstrating how you can use `hbox`:
 
 ```sh
 > hbox version
-0.4.0
+0.6.0
 > hbox info
 [System Information]
 OS Details:
@@ -76,7 +77,8 @@ OS Details:
   Family         : unix
 
 [Application Configuration]
-Version          : 0.4.0
+Version          : 0.6.0
+Engine           : docker
 Directories and Files:
   base dir       : /home/helton/.hbox
   config file    : /home/helton/.hbox/config.json
@@ -142,7 +144,7 @@ These examples should provide a quick start guide for you to understand the basi
 
 ### Configuration via config.json
 
-The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file. Currently, you can control the container engine, how logs are used and enable some experimental features:
+The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file. Currently, you can control the container engine, how logs are used, and enable some experimental features:
 
 ```json
 {
@@ -158,6 +160,27 @@ The general configuration of hbox is managed by the `$HBOX_DIR/config.json` file
   }
 }
 ```
+
+You can edit this file manually or use the `hbox config` command to update it programmatically. The `hbox config` command provides a convenient way to read and write configuration settings without directly editing the JSON file. You can use `hbox config` or its alias `hbox configure`.
+
+#### Examples:
+
+- **Set a configuration value**:
+  ```sh
+  hbox config logs.enabled false
+  hbox config logs.level debug
+  hbox config engine podman
+  ```
+
+- **Get a configuration value**:
+  ```sh
+  hbox config logs.enabled
+  hbox config engine
+  ```
+
+The command will either update the configuration file or print the current value of a configuration setting, depending on whether a value is provided.
+
+By using the `hbox config` command, you can ensure that your configuration changes are applied correctly without the risk of introducing syntax errors into the JSON file.
 
 #### Properties
 
