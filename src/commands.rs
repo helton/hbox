@@ -179,6 +179,16 @@ pub fn run_package(name: String, subcommand: Vec<String>) -> Result<(), Box<dyn 
     }
 }
 
+pub fn configure_setting(path: String, value: Option<String>) -> Result<(), Box<dyn Error>> {
+    if let Some(value) = value {
+        UserConfig::write_config_value(&path, &value)?;
+    } else {
+        UserConfig::read_config_value(&path)?;
+    }
+
+    Ok(())
+}
+
 fn do_add_package(name: &String, version: &String, package: Package) -> Result<(), Box<dyn Error>> {
     let mut new_package = package.clone();
     new_package.versions.current = version.clone();

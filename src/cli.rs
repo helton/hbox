@@ -71,6 +71,16 @@ enum Commands {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         subcommand: Vec<String>,
     },
+
+    /// Configure settings
+    #[command(alias = "configure")]
+    Config {
+        /// Configuration path
+        path: String,
+
+        /// Configuration value
+        value: Option<String>,
+    },
 }
 
 pub fn run() {
@@ -97,6 +107,7 @@ pub fn run() {
         Commands::Remove { name, version } => remove_package(name.clone(), version.clone()),
         Commands::Use { name, version } => use_package_version(name.clone(), version.clone()),
         Commands::Run { name, subcommand } => run_package(name.clone(), subcommand.clone()),
+        Commands::Config { path, value } => configure_setting(path.clone(), value.clone()),
     };
 
     if let Err(e) = result {

@@ -30,8 +30,6 @@ List of ideas I want to implement in the future.
   - Add version to config files to specify their formats to allow check for future compatibility
   - [Experimental] Allow forced flags in docker run, based on pattern matching
 - New commands
-  - Add `hbox config` to support all `config.json` options
-    - example: `hbox config logs.enabled true`
   - Add auto update `hbox upgrade`
   - Add `hbox update` to update index
   - Add `hbox register` to register a package, even with custom image
