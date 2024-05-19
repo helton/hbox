@@ -100,19 +100,60 @@ If you want to override configurations of a package, don't change the `$HBOX_DIR
 This directory is not sharded, so you can just place your `<package>.json` files there.
 As the name implies, the override configuration will take precedence over the index ones. The files contents won't be merged in memory.
 
-Example of a `$HBOX_DIR/overrides/aws.json`:
+Example of a `$HBOX_DIR/overrides/busybox.json`:
 
 ```json
 {
-  "image": "docker.io/amazon/aws-cli",
+  "image": "docker.io/busybox",
   "volumes": [
     {
-      "source": "~/.aws",
-      "target": "/root/.aws"
+      "source": ".",
+      "target": "/app"
     }
   ],
-  "current_directory": "/root/.aws"
+  "current_directory": "/app",
+  "binaries": [
+    {
+      "name": "tree",
+      "path": "/bin/tree"
+    },
+    {
+      "name": "mysh",
+      "path": "/bin/sh",
+      "cmd": ["-c"],
+      "wrap_args": true
+    }
+  ],
+  "only_shim_binaries": true,
+  "environment_variables": [
+    {
+      "name": "HTTP_PROXY",
+      "value": "$HTTP_PROXY"
+    },
+    {
+      "name": "HTTPS_PROXY",
+      "value": "$HTTPS_PROXY"
+    },
+    {
+      "name": "NO_PROXY",
+      "value": "$NO_PROXY"
+    }
+  ]
 }
+```
+
+In the example above, we defined a `mysh` as a binary pointing to `/bin/sh` inside the `busybox` image.
+Now we can use it like this:
+
+```sh
+> mysh ls -alh
+```
+
+Also note that we defined `-c` as the default command, and we also defined that all args should be wrapped in quotes.
+Under the hood the full command executed will be like this:
+
+```sh
+docker run -it --rm --name hbox-busybox-latest-qNDyEVzrUb -v .://app -w //app -e HTTP_PROXY=$HTTP_PROXY -e HTTPS_PROXY=$HTTPS_PROXY -e NO_PROXY=$NO_PROXY --entrypoint //bin/sh docker.io/busybox:latest -c "ls -alh"
 ```
 
 ### Configuration via config.json
