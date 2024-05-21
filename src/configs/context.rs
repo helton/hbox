@@ -16,6 +16,6 @@ impl Context {
     pub fn apply(&self, mut text: String) -> String {
         text = text.replace("${hbox_package_name}", &self.package_name);
         text = text.replace("${hbox_package_version}", &self.package_version);
-        text
+        shellexpand::full(&text).unwrap_or_default().to_string()
     }
 }
