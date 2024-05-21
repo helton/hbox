@@ -17,8 +17,12 @@ hbox offers the following features:
 - **Support for Pipes**: Supports the use of pipes in `hbox run`, enabling efficient command chaining.
 - **Convenient Shims**: Creates `shims` (alias shortcuts) for all installed packages, simplifying command entry from `hbox run <package alias> <commands>` to `<package alias> <commands>`.
 - **Accessible Internal Binaries**: Provides direct access to internal binaries within images. Users can override the default entrypoint to access essential tools and utilities within containers directly.
-- **Customizable Environment Variables**: Allows setting environment variables for each package, enabling finer control over runtime configurations.]()
+- **Customizable Environment Variables**: Allows setting environment variables for each package, enabling finer control over runtime configurations.
 - **Support for Docker and Podman**: Provides seamless support for both Docker and Podman container engines, offering flexibility in container runtime choices.
+- **Custom Images**:
+  - **Building Custom Images**: Allows users to build custom images on demand, either replacing existing packages or introducing new ones. Users can define build contexts, Dockerfiles, and build arguments within the configuration file.
+  - **Dynamic Build Arguments**: Supports dynamic and user-defined build arguments, using internal variables like **hbox_package_name** and **hbox_package_version** to tailor the build process to specific needs.
+  - **Registry and Local Images**: Manages images pulled from registries and locally built images, providing flexibility in how images are sourced and utilized within the hbox environment.
 
 ## Installation
 
@@ -250,7 +254,7 @@ The configuration below is for index (`$HBOX_DIR/index/<shard>/<package>.json`) 
 
 | Property                | Type      | Description                                                                                                                                                                                                                                      |
 |-------------------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `image`                 | `string`  | The Docker image to be used for the package. Example: `"docker.io/busybox"`                                                                                                                                                                      |
+| `image`                 | `object`  | The image configuration, which can include build instructions. Example: `{ "name": "hbox.${hbox_package_name}", "build": { "context": "/path/to/context", "dockerfile": "Dockerfile", "args": { "VERSION": "${hbox_package_version}" }}}`        |
 | `ports`                 | `array`   | An array of port mappings for the container. Each port mapping has a `host` and `container`. Example: `[{"host": 8090, "container": 8091}, {"host": 8091, "container": 8092}]`                                                                   |
 | `volumes`               | `array`   | An array of volume mappings for the container. Each volume mapping has a `source` and `target`. Example: `[{"source": ".", "target": "/app"}]`                                                                                                   |
 | `current_directory`     | `string`  | The working directory inside the container. Example: `"/app"`                                                                                                                                                                                    |
@@ -260,7 +264,7 @@ The configuration below is for index (`$HBOX_DIR/index/<shard>/<package>.json`) 
 
 #### Property Details
 
-- **image**: Specifies the Docker image to be used. This is a required property for defining the container image from which the package will be run.
+- **image**: Specifies the image configuration, which can include build instructions. This allows for dynamic and user-defined build arguments, using internal variables like **hbox_package_name** and **hbox_package_version**.
 
 - **ports**: Defines the port mappings between the host and the container. Each port mapping includes:
     - `host`: The port on the host machine.
@@ -292,7 +296,9 @@ Example of a `$HBOX_DIR/index/g/golang.json`:
 
 ```json
 {
-  "image": "docker.io/golang",
+  "image": {
+    "name": "docker.io/golang"
+  },
   "volumes": [
     {
       "source": ".",
@@ -326,7 +332,9 @@ Example of a `$HBOX_DIR/overrides/busybox.json`:
 
 ```json
 {
-  "image": "docker.io/busybox",
+  "image": {
+    "name": "docker.io/busybox"
+  },
   "ports": [
     {
       "host": 8090,
@@ -431,6 +439,61 @@ This example indicates that the `node` package has three versions installed (`la
 If you enable logs in your `$HBOX_DIR/config.json` file, they will appear in the `$HBOX_DIR/logs` folder. Use this to see what commands are executed under the hood that aren't normally displayed to the user.
 
 **Note**: Be careful when sharing your logs, as they may contain sensitive information such as API keys and environment variables.
+
+## How To
+
+### Creating packages from custom images
+
+To build custom images, you need to have a Dockerfile and a `.json` hbox config.
+
+Let's take the [pkl](https://pkl-lang.org/) as an example and create a `Dockerfile` for it:
+
+```Dockerfile
+FROM alpine:latest
+
+ARG VERSION=0.25.3
+
+RUN apk add --no-cache curl
+
+WORKDIR /usr/local/bin
+
+RUN curl -L -o pkl https://github.com/apple/pkl/releases/download/${VERSION}/pkl-alpine-linux-amd64 && \
+    chmod +x pkl
+
+ENTRYPOINT ["pkl"]
+```
+
+Since this is a custom package, we need to make it visible to hbox, so we will add it into the `$HBOX_DIR/overrides` folder as `pkl.json`.
+Let's also make use of hbox internal variables to pass values to the Dockerfile and tag the image accordingly:
+
+```json
+{
+  "image": {
+    "name": "hbox.${hbox_package_name}",
+    "build": {
+      "context": "/home/helton/dockerfiles",
+      "dockerfile": "/home/helton/dockerfiles/pkl.Dockerfile",
+      "args": {
+        "VERSION": "${hbox_package_version}"
+      }
+    }
+  }
+}
+```
+
+Now we can safely add `pkl` as a package into hbox
+
+```sh
+> hbox add pkl 0.25.3
+[+] Building 4.8s (8/8) FINISHED
+...
+ => => naming to docker.io/library/hbox.pkl:0.25.3  
+Added 'pkl' version '0.25.3'. Current version is '0.25.3'.
+> which pkl
+/home/helton/.hbox/shims/pkl
+> pkl --version
+Pkl 0.25.3 (Linux 5.15.0-1053-aws, native)
+```
 
 ## Next steps
 

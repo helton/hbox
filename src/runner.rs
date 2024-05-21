@@ -1,3 +1,4 @@
+use crate::configs::context::Context;
 use crate::configs::index::Binary;
 use crate::configs::user::UserConfig;
 use crate::packages::Package;
@@ -8,9 +9,32 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
 
+pub fn build(package: &Package) -> bool {
+    let config = UserConfig::load().unwrap_or_default();
+    let context = Context::from(package);
+    let image_name = context.apply(package.index.image.name.clone());
+    let image = format!("{}:{}", image_name, package.versions.current);
+
+    let mut args = vec!["build".to_string(), "-t".to_string(), image];
+    if let Some(build) = &package.index.image.build {
+        args.push("-f".to_string());
+        args.push(build.dockerfile.clone());
+        if let Some(build_args) = &build.args {
+            for (key, value) in build_args {
+                args.push("--build-arg".to_string());
+                args.push(format!("{}={}", key, context.apply(value.clone())));
+            }
+        }
+        args.push(build.context.clone());
+    }
+
+    run_command_with_args(config.engine.as_str(), &args, None)
+}
+
 pub fn pull(package: &Package) -> bool {
     let config = UserConfig::load().unwrap_or_default();
-    let image = format!("{}:{}", package.index.image, package.versions.current);
+    let image_name = Context::from(package).apply(package.index.image.name.clone());
+    let image = format!("{}:{}", image_name, package.versions.current);
     run_command_with_args(config.engine.as_str(), &["pull".to_string(), image], None)
 }
 
@@ -77,9 +101,11 @@ fn add_default_flags(package: &Package, args: &mut Vec<String>) {
 }
 
 fn add_container_image(package: &Package, args: &mut Vec<String>) {
+    let context = Context::from(&package);
     args.push(format!(
         "{}:{}",
-        package.index.image, package.versions.current
+        context.apply(package.index.image.name.clone()),
+        package.versions.current
     ));
 }
 

@@ -2,6 +2,7 @@ use crate::configs::app::AppConfig;
 use crate::serialization::parse_json;
 use log::debug;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
 
@@ -45,7 +46,7 @@ impl IndexConfig {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
-    pub image: String,
+    pub image: Image,
     pub volumes: Option<Vec<Volume>>,
     pub ports: Option<Vec<Port>>,
     pub current_directory: Option<String>,
@@ -58,7 +59,10 @@ pub struct Package {
 impl Package {
     pub fn new(name: &str) -> Self {
         Package {
-            image: format!("docker.io/{}", name),
+            image: Image {
+                name: format!("docker.io/{}", name),
+                build: None,
+            },
             volumes: None,
             ports: None,
             current_directory: None,
@@ -67,6 +71,25 @@ impl Package {
             only_shim_binaries: false,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Image {
+    pub name: String,
+    pub build: Option<Build>,
+}
+
+impl Image {
+    pub fn is_local(&self) -> bool {
+        self.build.is_some()
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Build {
+    pub context: String,
+    pub dockerfile: String,
+    pub args: Option<HashMap<String, String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

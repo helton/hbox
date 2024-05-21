@@ -65,7 +65,19 @@ impl Package {
     pub fn print(&self, verbose: bool) {
         info!("- [{}]", self.name);
         if verbose {
-            info!("  - image: {}", self.index.image);
+            info!("  - image:");
+            info!("    - name: {}", &self.index.image.name);
+            if let Some(build) = &self.index.image.build {
+                info!("    - build:");
+                info!("      - dockerfile: {}", build.dockerfile);
+                info!("      - context: {}", build.context);
+                info!("      - args:");
+                if let Some(args) = &build.args {
+                    for (arg_name, arg_value) in args.iter() {
+                        info!("        - {}: {}", arg_name, arg_value);
+                    }
+                }
+            }
             if let Some(ports) = &self.index.ports {
                 info!("  - ports:");
                 for port in ports {

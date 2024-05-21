@@ -192,7 +192,14 @@ pub fn configure_setting(path: String, value: Option<String>) -> Result<(), Box<
 fn do_add_package(name: &String, version: &String, package: Package) -> Result<(), Box<dyn Error>> {
     let mut new_package = package.clone();
     new_package.versions.current = version.clone();
-    if crate::runner::pull(&new_package) {
+
+    let should_add_package = if new_package.index.image.is_local() {
+        crate::runner::build(&new_package)
+    } else {
+        crate::runner::pull(&new_package)
+    };
+
+    if should_add_package {
         if !&package.index.only_shim_binaries {
             add_shim(&name, None)?;
         }
