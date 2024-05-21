@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/helton/hbox/compare/v0.7.0...v0.7.1) (2024-05-21)
+
+
+### Bug Fixes
+
+* shell expand all places internal variables are used ([79ca034](https://github.com/helton/hbox/commit/79ca034fbc37fc8a969ede8b56478a21ebe1778d))
+
 ## [0.7.0](https://github.com/helton/hbox/compare/v0.6.1...v0.7.0) (2024-05-21)
 
 
