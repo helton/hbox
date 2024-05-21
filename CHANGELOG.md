@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/helton/hbox/compare/v0.6.1...v0.7.0) (2024-05-21)
+
+
+### Features
+
+* add custom image support ([45fa72f](https://github.com/helton/hbox/commit/45fa72f94e101687fe7f6c82be80cb21ca938f5d))
+
 ## [0.6.1](https://github.com/helton/hbox/compare/v0.6.0...v0.6.1) (2024-05-19)
 
 
